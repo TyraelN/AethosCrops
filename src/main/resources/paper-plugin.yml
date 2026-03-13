@@ -1,0 +1,4 @@
+name: AethosCrops
+version: '0.1.0-SNAPSHOT'
+main: de.aethos.AethosCrops
+api-version: '1.21'
