@@ -7,7 +7,10 @@
 - [ ] Migrate existing GUIs to GuiLib
 - [ ] Remove old GUI handling code
 - [ ] Test inventory interactions
-
+<groupId>xyz.janboerman</groupId>
+<artifactId>GuiLib-API</artifactId>
+<version>{guilib-version}</version>
+<scope>provided/compile</scope>
 ---
 
 ## 2. Crop System Refactor
