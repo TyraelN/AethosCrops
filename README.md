@@ -1,68 +1,28 @@
-# Development Tasks
+# AethosCrops ✦
 
-## 1. GUI System
+Custom-Crops für Paper mit **Wachstumsstufen**, **Krankheiten** und konfigurierbaren
+**Drops** – dargestellt über `ItemDisplay`-Modelle (Modellpfade kommen aus dem
+Ressourcepack, siehe AethosResourcePack). Vollständig über die `config.yml` definierbar.
 
-### Tasks
-- [ ] Integrate GuiLib into the project
-- [ ] Migrate existing GUIs to GuiLib
-- [ ] Remove old GUI handling code
-- [ ] Test inventory interactions
-<groupId>xyz.janboerman</groupId>
-<artifactId>GuiLib-API</artifactId>
-<version>{guilib-version}</version>
-<scope>provided/compile</scope>
----
+## Funktionen
+- Beliebig viele Crops in der `config.yml` (`crops.<id>`): Anzeigename, Stufen-Modellpfade,
+  Wachstumsgeschwindigkeit, Max-Stufe, erlaubte Krankheiten (mit Wahrscheinlichkeit), Drop-Tabelle.
+- Wachstum stufenweise über Vanilla-Weizen; Crop-Daten liegen im Chunk-`PersistentDataContainer`.
+- **Krankheiten** (Weed, Bugs, Fungal Infection) mit Leveln; Behandlung über ein Such-GUI
+  (richtige Symptome anklicken, Blätter senken die Pflanzengesundheit).
+- Drops skalieren mit der Pflanzengesundheit; Trampeln/Wasser zerstören Crops korrekt.
 
-## 2. Crop System Refactor
+## Befehl
+`/aethoscrops` (Alias `/acrops`), Permission `aethoscrops.admin` (Default op):
+`chunkinfo` · `blockinfo` · `giveseed <id>` · `givediseasetool <disease-id>` · `reload`.
+`reload` ist auch von der Server-Konsole/dem Aethos-Panel ausführbar.
 
-### Tasks
-- [ ] Remove the `CropType` enum
-- [ ] Load crops dynamically from the config file
-- [ ] Implement config parsing for crop definitions
-- [ ] Add validation for invalid or missing entries
+## Aethos-Integration
+Schreibt `aethos.desc` + `status.txt` in den Datenordner → erscheint im Aethos-Manager-Panel
+(Status + Aktion „Config neu laden"). Plugin-Name trägt das Pflicht-Präfix `Aethos`.
 
----
-
-## 3. Language Refactor
-
-Rename German identifiers to English.
-
-### Examples
-- `Krankheit` → `Disease`
-- `Käfer` → `Beetle` / `Bug`
-
-### Tasks
-- [ ] Search the codebase for remaining German names
-- [ ] Update comments and documentation
-
----
-
-## 4. Command System
-
-### Tasks
-- [ ] Replace current command implementation with Command API
-- [ ] Refactor command registration
-- [ ] Implement argument handling
-- [ ] Implement permission checks
-- [ ] Add tab completion
-
----
-
-## 5. Minecraft Version Upgrade
-
-Upgrade the plugin to **Minecraft / Paper 1.21.11**.
-
-### Tasks
-- [ ] Update API dependency
-- [ ] Fix compilation errors caused by API changes
-- [ ] Replace removed or deprecated methods
-- [ ] Ensure plugin loads correctly
-- [ ] Test gameplay features
-
----
-
-## 6. Testing
-
-### Tasks
-- [ ] Ensure the project compiles successfully
-- [ ] Run the plugin on a 1.21.11 test server
+## Herkunft / Lizenz
+Ursprünglich entwickelt von **Luis-GameDev** (https://github.com/Luis-GameDev/Aethos-Crops).
+Für Aethos sicherheitsgeprüft, auf das `de.aethos`-Paket umgezogen, auf die Aethos-Konventionen
+(paper-plugin.yml, Brigadier-Command, Descriptor, Reposilite) umgestellt und in `AethosCrops`
+umbenannt.

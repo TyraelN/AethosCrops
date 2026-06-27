@@ -1,0 +1,25 @@
+# Maven Build-Output
+target/
+*.class
+*.jar
+
+# IDE
+.idea/
+*.iml
+
+# Logs
+*.log
+
+# Geheimnisse (niemals committen)
+*.env
+.env
+*secret*
+*.key
+*.pem
+*token*
+*password*
+
+# OS / Editor
+.DS_Store
+*.swp
+*~

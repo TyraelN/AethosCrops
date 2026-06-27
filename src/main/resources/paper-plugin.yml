@@ -1,4 +1,12 @@
 name: AethosCrops
-version: '0.1.0-SNAPSHOT'
-main: de.aethos.AethosCrops
-api-version: '1.21'
+version: 1.0.0-SNAPSHOT
+main: de.aethos.crops.AethosCrops
+api-version: '26.1'
+description: Custom-Crops mit Wachstumsstufen, Krankheiten und Drops (Item-Display-Modelle).
+authors: [Aethos]
+# Ursprung: github.com/Luis-GameDev/Aethos-Crops (geprüft & als Aethos-Plugin übernommen).
+# Befehl /aethoscrops (Alias /acrops) wird im Code via Brigadier-Lifecycle registriert.
+permissions:
+  aethoscrops.admin:
+    description: Zugriff auf die AethosCrops-Verwaltungsbefehle.
+    default: op

@@ -1,0 +1,240 @@
+package de.aethos.crops.Testing;
+
+import de.aethos.crops.AethosCrops;
+import de.aethos.crops.Utils.Crop;
+import de.aethos.crops.Utils.CropKey;
+import de.aethos.crops.Utils.Gen.IGen;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
+
+public class AdminCommands {
+
+    public void execute(CommandSender sender, String[] args) {
+        // reload darf auch von der Konsole (Aethos-Panel) kommen.
+        if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
+            handleReload(sender);
+            return;
+        }
+
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(ChatColor.RED + "Only players can use this command.");
+            return;
+        }
+
+        if (args.length == 0) {
+            sendUsage(player);
+            return;
+        }
+
+        String subCommand = args[0].toLowerCase();
+        switch (subCommand) {
+            case "chunkinfo" -> handleChunkInfo(player);
+            case "blockinfo" -> handleBlockInfo(player);
+            case "giveseed" -> handleGiveSeed(player, args);
+            case "givediseasetool" -> handleGiveDiseaseTool(player, args);
+            default -> sendUsage(player);
+        }
+    }
+
+    private void handleChunkInfo(Player player) {
+        Map<Block, Crop> crops = AethosCrops.getDataManager().loadAllCrops(player.getLocation().getChunk());
+
+        if (crops.isEmpty()) {
+            player.sendMessage(ChatColor.YELLOW + "No custom crops were found in this chunk.");
+            return;
+        }
+
+        player.sendMessage(ChatColor.GOLD + "Crops in current chunk: " + ChatColor.AQUA + crops.size());
+        crops.entrySet().stream()
+                .sorted((left, right) -> {
+                    Location a = left.getKey().getLocation();
+                    Location b = right.getKey().getLocation();
+                    int yComp = Integer.compare(a.getBlockY(), b.getBlockY());
+                    if (yComp != 0) return yComp;
+                    int xComp = Integer.compare(a.getBlockX(), b.getBlockX());
+                    if (xComp != 0) return xComp;
+                    return Integer.compare(a.getBlockZ(), b.getBlockZ());
+                })
+                .forEach(entry -> {
+                    Block block = entry.getKey();
+                    Crop crop = entry.getValue();
+                    String location = block.getX() + "," + block.getY() + "," + block.getZ();
+
+                    player.sendMessage(
+                            ChatColor.GRAY + "- " + ChatColor.WHITE + crop.getId() +
+                                    ChatColor.DARK_GRAY + " (" + crop.getStage() + "/" + crop.getMaxStage() + ") " +
+                                    ChatColor.GRAY + "at " + ChatColor.AQUA + location
+                    );
+                });
+    }
+
+    private void handleBlockInfo(Player player) {
+        Block target = player.getTargetBlockExact(8);
+
+        if (target == null) {
+            player.sendMessage(ChatColor.RED + "No target block in range.");
+            return;
+        }
+
+        Location loc = target.getLocation();
+        player.sendMessage(ChatColor.GOLD + "Target block: " + ChatColor.WHITE + target.getType() + ChatColor.GRAY + " at " +
+                ChatColor.AQUA + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ());
+
+        Crop crop = AethosCrops.getDataManager().loadCrop(target);
+        if (crop == null) {
+            player.sendMessage(ChatColor.YELLOW + "No custom crop data stored on this block.");
+            return;
+        }
+
+        player.sendMessage(ChatColor.GREEN + "Custom crop info:");
+        player.sendMessage(ChatColor.GRAY + "- id: " + ChatColor.WHITE + crop.getId());
+        player.sendMessage(ChatColor.GRAY + "- display-name: " + ChatColor.WHITE + crop.getDisplayName());
+        player.sendMessage(ChatColor.GRAY + "- stage: " + ChatColor.WHITE + crop.getStage() + ChatColor.GRAY + "/" + ChatColor.WHITE + crop.getMaxStage());
+        player.sendMessage(ChatColor.GRAY + "- health: " + ChatColor.WHITE + String.format("%.2f%%", crop.getHealth()));
+        player.sendMessage(ChatColor.GRAY + "- model-path: " + ChatColor.WHITE + crop.getModelPathForStage(crop.getStage()));
+        player.sendMessage(ChatColor.GRAY + "- diseases: " + formatDiseaseInfo(crop));
+    }
+
+    private String formatDiseaseInfo(Crop crop) {
+        Map<IGen, Double> diseaseChances = crop.getDiseaseChances();
+        if (diseaseChances.isEmpty()) {
+            return ChatColor.YELLOW + "none configured";
+        }
+
+        StringJoiner configuredDiseases = new StringJoiner(ChatColor.GRAY + ", ");
+        crop.getDiseaseChances().forEach((disease, chance) -> configuredDiseases.add(
+                ChatColor.WHITE + disease.getDisplayName() +
+                        ChatColor.DARK_GRAY + " [id=" + disease.getId() + ", chance=" + Math.round(chance * 100.0D) + "%]"
+        ));
+
+        if (crop.getDiseases().isEmpty()) {
+            return ChatColor.GRAY + "configured: " + configuredDiseases + ChatColor.GRAY + " | active: " + ChatColor.YELLOW + "none";
+        }
+
+        String activeDiseases = crop.getDiseases().stream()
+                .map(disease -> ChatColor.WHITE + disease.getDisplayName() + ChatColor.DARK_GRAY + " [id=" + disease.getId() + ", level=" + crop.getDiseaseLevel(disease) + "]")
+                .collect(Collectors.joining(ChatColor.GRAY + ", "));
+
+        return ChatColor.GRAY + "configured: " + configuredDiseases + ChatColor.GRAY + " | active: " + activeDiseases;
+    }
+
+    private void handleGiveDiseaseTool(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(ChatColor.RED + "Usage: /aethoscrops givediseasetool <disease-id>");
+            return;
+        }
+
+        String diseaseId = args[1].toLowerCase();
+        IGen disease = AethosCrops.getGenRegistry().findById(diseaseId);
+        if (disease == null) {
+            player.sendMessage(ChatColor.RED + "Unknown disease id: " + diseaseId);
+            return;
+        }
+
+        ItemStack tool = AethosCrops.getConfigManager().createDiseaseToolItem(diseaseId);
+        if (tool == null) {
+            player.sendMessage(ChatColor.RED + "No configured treatment item for disease id: " + diseaseId);
+            return;
+        }
+
+        Map<Integer, ItemStack> leftovers = player.getInventory().addItem(tool);
+        if (!leftovers.isEmpty()) {
+            leftovers.values().forEach(stack -> player.getWorld().dropItemNaturally(player.getLocation(), stack));
+        }
+
+        player.sendMessage(ChatColor.GREEN + "Given disease treatment tool for: " + ChatColor.WHITE + disease.getDisplayName());
+    }
+
+    private void handleGiveSeed(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(ChatColor.RED + "Usage: /aethoscrops giveseed <ID>");
+            return;
+        }
+
+        String cropId = args[1];
+        Crop crop = AethosCrops.getCropRegistry().get(cropId);
+
+        if (crop == null) {
+            player.sendMessage(ChatColor.RED + "Unknown crop id: " + cropId);
+            return;
+        }
+
+        ItemStack seed = new ItemStack(Material.WHEAT_SEEDS);
+        ItemMeta meta = seed.getItemMeta();
+        if (meta == null) {
+            player.sendMessage(ChatColor.RED + "Failed to create seed item meta.");
+            return;
+        }
+
+        meta.setDisplayName(ChatColor.GREEN + crop.getDisplayName() + ChatColor.YELLOW + " Seed");
+
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.GRAY + "Custom crop seed");
+        lore.add(ChatColor.DARK_GRAY + "ID: " + crop.getId());
+        meta.setLore(lore);
+
+        meta.getPersistentDataContainer().set(CropKey.CROP_TYPE, PersistentDataType.STRING, crop.getId());
+        seed.setItemMeta(meta);
+
+        Map<Integer, ItemStack> leftovers = player.getInventory().addItem(seed);
+        if (!leftovers.isEmpty()) {
+            leftovers.values().forEach(stack -> player.getWorld().dropItemNaturally(player.getLocation(), stack));
+            player.sendMessage(ChatColor.YELLOW + "Inventory full, dropped seed on the ground.");
+        }
+
+        player.sendMessage(ChatColor.GREEN + "Given seed for crop: " + ChatColor.WHITE + crop.getId());
+    }
+
+    private void handleReload(CommandSender sender) {
+        AethosCrops plugin = AethosCrops.getInstance();
+        AethosCrops.getConfigManager().loadCrops(AethosCrops.getCropRegistry());
+        plugin.reloadConfig();
+
+        sender.sendMessage(ChatColor.GREEN + "AethosCrops config reloaded.");
+    }
+
+    private void sendUsage(Player player) {
+        player.sendMessage(ChatColor.RED + "Usage: /aethoscrops <chunkinfo|blockinfo|giveseed|givediseasetool|reload>");
+    }
+
+    public List<String> suggest(CommandSender sender, String[] args) {
+        if (args.length == 1) {
+            List<String> subCommands = List.of("chunkinfo", "blockinfo", "giveseed", "givediseasetool", "reload");
+            return subCommands.stream()
+                    .filter(entry -> entry.startsWith(args[0].toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("giveseed")) {
+            return AethosCrops.getCropRegistry().getAll().stream()
+                    .map(Crop::getId)
+                    .filter(id -> id.toLowerCase().startsWith(args[1].toLowerCase()))
+                    .sorted()
+                    .collect(Collectors.toList());
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("givediseasetool")) {
+            return AethosCrops.getGenRegistry().getAll().stream()
+                    .map(IGen::getId)
+                    .filter(id -> id.toLowerCase().startsWith(args[1].toLowerCase()))
+                    .sorted()
+                    .collect(Collectors.toList());
+        }
+
+        return Collections.emptyList();
+    }
+}

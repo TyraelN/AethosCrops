@@ -1,4 +1,152 @@
-mysql:
-  url: jdbc:mysql://localhost:3306/plants
-  user: ethos
-  pwd: crops
+# Aethos Crops configuration
+#
+# You can define any amount of crops under the 'crops' section.
+# Each crop id becomes its unique key in the CropRegistry.
+
+crops:
+  wheat:
+    display-name: "Wheat"
+    stage-model-paths:
+      - "aethos/wheat/stage1"
+      - "aethos/wheat/stage2"
+      - "aethos/wheat/stage3"
+      - "aethos/wheat/stage4"
+      - "aethos/wheat/stage5"
+      - "aethos/wheat/stage6"
+      - "aethos/wheat/stage7"
+
+    # It is recommended to leave this at 1.0 and instead define the time it takes
+    # for a plant to grow by adding/removing growth-stages, this makes the
+    # overall appearance and behaviour of the plant more realistic
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      weed: 0.3
+    drops:
+      entries:
+        wheat_item1:
+          material: WHEAT
+          amount: 1
+          chance: 1.0
+        wheat_item2:
+          material: WHEAT
+          amount: 1
+          chance: 0.5
+        wheat_seeds1:
+          material: WHEAT_SEEDS
+          amount: 1
+          chance: 1
+        wheat_seeds2:
+          material: WHEAT_SEEDS
+          amount: 1
+          chance: 0.5
+        wheat_seeds3:
+          material: WHEAT_SEEDS
+          amount: 1
+          chance: 0.2
+
+  corn:
+    display-name: "Corn"
+    stage-model-paths:
+      - "aethos/corn/stage1"
+      - "aethos/corn/stage2"
+      - "aethos/corn/stage3"
+      - "aethos/corn/stage4"
+      - "aethos/corn/stage5"
+      - "aethos/corn/stage6"
+    grow-speed: 1.0
+    max-stage: 6
+    allowed-diseases:
+      bugs: 0.45
+      fungalinfection: 0.2
+    drops:
+      entries:
+        corn_item:
+          material: HAY_BLOCK
+          amount: 1
+          chance: 0.7
+
+  tomato:
+    display-name: "Tomato"
+    stage-model-paths:
+      - "aethos/tomato/stage1"
+      - "aethos/tomato/stage2"
+      - "aethos/tomato/stage3"
+      - "aethos/tomato/stage4"
+      - "aethos/tomato/stage5"
+      - "aethos/tomato/stage6"
+      - "aethos/tomato/stage7"
+      - "aethos/tomato/stage8"
+      - "aethos/tomato/stage9"
+      - "aethos/tomato/stage10"
+      - "aethos/tomato/stage11"
+    grow-speed: 1.0
+    max-stage: 11
+    allowed-diseases:
+      bugs: 0.45
+      fungalinfection: 0.2
+    drops:
+      entries:
+        tomato_item:
+          material: APPLE
+          amount: 1
+          chance: 1.0
+        tomato_item2:
+          material: REDSTONE
+          amount: 1
+          chance: 0.4
+        tomato_item3:
+          material: OAK_LEAVES
+          amount: 1
+          chance: 0.5
+        tomato_item4:
+          material: APPLE
+          amount: 1
+          chance: 0.3
+
+disease-treatment:
+  wrong-leaf-health-penalty: 2.0
+  gui-items:
+    weed:
+      material: SHORT_GRASS
+      amount: 1
+      display-name: "&aWeed"
+      lore:
+        - "&7Pull out the weeds."
+    bugs:
+      material: COBWEB
+      amount: 1
+      display-name: "&cInfesting Bugs"
+      lore:
+        - "&7Remove bug clusters."
+    fungalinfection:
+      material: RED_MUSHROOM
+      amount: 1
+      display-name: "&6Fungus"
+      lore:
+        - "&7Remove fungal growth."
+  items:
+    weed:
+      material: SHEARS
+      amount: 1
+      display-name: "&aWeed Cleaner"
+      lore:
+        - "&7Tool to treat weed disease."
+      custom-model-data: 10001
+      item-model-path: "aethos/tools/weed_cleaner"
+    bugs:
+      material: SPIDER_EYE
+      amount: 1
+      display-name: "&aBug Spray"
+      lore:
+        - "&7Tool to treat bugs disease."
+      custom-model-data: 10002
+      item-model-path: "aethos/tools/bug_spray"
+    fungalinfection:
+      material: FERMENTED_SPIDER_EYE
+      amount: 1
+      display-name: "&aFungal Cure"
+      lore:
+        - "&7Tool to treat fungal infection."
+      custom-model-data: 10003
+      item-model-path: "aethos/tools/fungal_cure"
