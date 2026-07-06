@@ -5,7 +5,7 @@ import de.aethos.crops.Utils.CropKey;
 import de.aethos.crops.Utils.Crop;
 import de.aethos.crops.Utils.Gen.IGen;
 import de.aethos.crops.Utils.DropEntry;
-import org.bukkit.ChatColor;
+import de.aethos.crops.Utils.SeedGenes;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -14,6 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -41,7 +42,9 @@ public class CropManager {
 
             boolean wasActive = crop.getDiseases().contains(disease);
             int previousLevel = Math.max(1, crop.getDiseaseLevel(disease));
-            boolean shouldRemainActive = ThreadLocalRandom.current().nextDouble() <= chance;
+            // Resistenz-Gen senkt die Krankheits-Wahrscheinlichkeit (1.0x - 0.5x).
+            double effectiveChance = Math.min(1.0D, chance * crop.getGenes().diseaseChanceMultiplier());
+            boolean shouldRemainActive = ThreadLocalRandom.current().nextDouble() <= effectiveChance;
 
             if (shouldRemainActive) {
                 if (wasActive) {
@@ -78,24 +81,52 @@ public class CropManager {
             return;
         }
 
-        double healthMultiplier = crop.getHealth() / 100.0D;
+        // Gesundheit und Ertrags-Gen skalieren die Drop-Menge gemeinsam.
+        double amountMultiplier = (crop.getHealth() / 100.0D) * crop.getGenes().yieldMultiplier();
+        int mutationSpread = AethosCrops.getConfigManager().getMutationSpread();
 
         for (DropEntry entry : crop.getDropTable().getEntries()) {
             if (entry == null || entry.getItem() == null || entry.getChance() <= 0) {
                 continue;
             }
 
-            if (ThreadLocalRandom.current().nextDouble() <= entry.getChance()) {
-                ItemStack scaledDrop = entry.getItem().clone();
-                int scaledAmount = (int) Math.floor(scaledDrop.getAmount() * healthMultiplier);
-                if (scaledAmount <= 0) {
-                    continue;
-                }
-
-                scaledDrop.setAmount(scaledAmount);
-                block.getWorld().dropItem(block.getLocation(), scaledDrop);
+            if (ThreadLocalRandom.current().nextDouble() > entry.getChance()) {
+                continue;
             }
+
+            int scaledAmount = probabilisticRound(entry.getItem().getAmount() * amountMultiplier);
+            if (scaledAmount <= 0) {
+                continue;
+            }
+
+            if (entry.getItem().getType() == Material.WHEAT_SEEDS) {
+                // Samen-Drops erben die Gene der Elternpflanze (leicht mutiert);
+                // jeder Samen einzeln, damit jede Mutation ihren eigenen Stack bildet.
+                for (int i = 0; i < scaledAmount; i++) {
+                    SeedGenes inherited = crop.getGenes().mutate(mutationSpread);
+                    ItemStack seed = AethosCrops.getSeedItemManager().createSeedStack(crop, List.of(inherited));
+                    if (seed != null) {
+                        block.getWorld().dropItem(block.getLocation(), seed);
+                    }
+                }
+                continue;
+            }
+
+            ItemStack scaledDrop = entry.getItem().clone();
+            scaledDrop.setAmount(scaledAmount);
+            block.getWorld().dropItem(block.getLocation(), scaledDrop);
         }
+    }
+
+    // Rundet den Nachkommaanteil als Wahrscheinlichkeit (2.3 -> 30% Chance auf 3,
+    // sonst 2), damit kleine Mengen nicht systematisch auf 0 abgeschnitten werden.
+    private int probabilisticRound(double value) {
+        int base = (int) Math.floor(value);
+        double fraction = value - base;
+        if (fraction > 0 && ThreadLocalRandom.current().nextDouble() < fraction) {
+            base++;
+        }
+        return base;
     }
 
     // Drops seed when not fully grown, otherwise drops harvest items
@@ -148,7 +179,7 @@ public class CropManager {
             return null;
         }
 
-        return new Crop(
+        Crop crop = new Crop(
                 template.getId(),
                 template.getDisplayName(),
                 template.getStageModelPaths(),
@@ -157,26 +188,25 @@ public class CropManager {
                 template.getDiseaseChances(),
                 template.getMaxStage()
         );
+
+        // Verbraucht wird immer der letzte Samen des Stacks - seine Gene
+        // bestimmen die gepflanzte Pflanze (siehe SeedItemManager-Invarianten).
+        List<SeedGenes> genes = AethosCrops.getSeedItemManager().getGenes(itemStack);
+        if (!genes.isEmpty()) {
+            crop.setGenes(genes.get(genes.size() - 1));
+        }
+
+        return crop;
     }
 
-    // Turns a crop object into its respective seed item
+    // Turns a crop object into its respective seed item (keeps the crop's genes)
     public ItemStack toSeed(Crop crop) {
         if (crop == null) {
             return new ItemStack(Material.WHEAT_SEEDS);
         }
 
-        ItemStack seed = new ItemStack(Material.WHEAT_SEEDS);
-        ItemMeta meta = seed.getItemMeta();
-        if (meta == null) {
-            return seed;
-        }
-
-        meta.setDisplayName(ChatColor.GREEN + crop.getDisplayName() + ChatColor.YELLOW + " Seed");
-        meta.getPersistentDataContainer().set(CropKey.CROP_TYPE, PersistentDataType.STRING, crop.getId());
-        seed.setItemMeta(meta);
-
-        return seed;
-
+        ItemStack seed = AethosCrops.getSeedItemManager().createSeedStack(crop, List.of(crop.getGenes()));
+        return seed != null ? seed : new ItemStack(Material.WHEAT_SEEDS);
     }
 
     public boolean isDiseaseTool(ItemStack itemStack) {

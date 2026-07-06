@@ -33,6 +33,12 @@ public class ConfigManager {
         return Math.max(0.0D, plugin.getConfig().getDouble("disease-treatment.wrong-leaf-health-penalty", 2.0D));
     }
 
+    // Maximale Abweichung je Gen-Wert (0-255) bei der Vererbung an geerntete Samen.
+    public int getMutationSpread() {
+        int spread = plugin.getConfig().getInt("genetics.mutation-spread", 12);
+        return Math.max(0, Math.min(127, spread));
+    }
+
     public void loadCrops(CropRegistry cropRegistry) {
         plugin.saveDefaultConfig();
         plugin.reloadConfig();

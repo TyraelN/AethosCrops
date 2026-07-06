@@ -5,6 +5,7 @@ import org.bukkit.NamespacedKey;
 
 public class CropKey {
     public static final NamespacedKey CROP_TYPE = key("crop_type");
+    public static final NamespacedKey SEED_GENES = key("seed_genes");
     public static final NamespacedKey DISEASE_TOOL = key("disease_tool");
     public static final NamespacedKey DISEASE_GUI_ITEM = key("disease_gui_item");
     public static final NamespacedKey BUGS_TOOL = key("bugs_tool");

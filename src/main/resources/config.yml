@@ -3,6 +3,15 @@
 # You can define any amount of crops under the 'crops' section.
 # Each crop id becomes its unique key in the CropRegistry.
 
+# Genetik: Jeder Samen traegt drei Gen-Werte (growth/yield/resistance, je 0-255;
+# Default 0 = Vanilla-Verhalten, hoehere Werte wirken nur verbessernd:
+# Wachstum x1.0-2.0, Drop-Menge x1.0-2.0, Krankheits-Chance x1.0-0.5).
+# Angezeigt wird nur die Sterne-Guete (1-5) als Durchschnitt; Samen gleicher
+# Guete stacken. WHEAT_SEEDS-Eintraege in Drop-Tabellen werden als vererbte
+# Samen der Elternpflanze gedroppt (Gene +/- mutation-spread).
+genetics:
+  mutation-spread: 12
+
 crops:
   wheat:
     display-name: "Wheat"

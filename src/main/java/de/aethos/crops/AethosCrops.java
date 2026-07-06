@@ -5,11 +5,13 @@ import de.aethos.crops.Events.CropGrowListener;
 import de.aethos.crops.Events.CropPlantListener;
 import de.aethos.crops.Events.DiseaseTreatmentListener;
 import de.aethos.crops.Events.FarmlandTrampleListener;
+import de.aethos.crops.Events.SeedStackListener;
 import de.aethos.crops.Events.WaterDestroyCropListener;
 import de.aethos.crops.Managers.ConfigManager;
 import de.aethos.crops.Managers.CropManager;
 import de.aethos.crops.Managers.DataManager;
 import de.aethos.crops.Managers.DisplayManager;
+import de.aethos.crops.Managers.SeedItemManager;
 import de.aethos.crops.Testing.AdminCommands;
 import de.aethos.crops.Utils.Crop;
 import de.aethos.crops.Utils.CropRegistry;
@@ -40,6 +42,7 @@ public final class AethosCrops extends JavaPlugin {
     public static CropRegistry cropRegistry;
     public static ConfigManager configManager;
     public static GenRegistry genRegistry;
+    public static SeedItemManager seedItemManager;
 
     @Override
     public void onEnable() {
@@ -47,6 +50,7 @@ public final class AethosCrops extends JavaPlugin {
 
         dataManager = new DataManager(this);
         cropManager = new CropManager();
+        seedItemManager = new SeedItemManager();
         displayManager = new DisplayManager();
         cropRegistry = new CropRegistry();
         genRegistry = new GenRegistry();
@@ -92,6 +96,10 @@ public final class AethosCrops extends JavaPlugin {
         return genRegistry;
     }
 
+    public static SeedItemManager getSeedItemManager() {
+        return seedItemManager;
+    }
+
     public static AethosCrops getInstance() {
         return instance;
     }
@@ -105,6 +113,7 @@ public final class AethosCrops extends JavaPlugin {
         pluginManager.registerEvents(new DiseaseTreatmentListener(), this);
         pluginManager.registerEvents(new FarmlandTrampleListener(), this);
         pluginManager.registerEvents(new WaterDestroyCropListener(), this);
+        pluginManager.registerEvents(new SeedStackListener(), this);
     }
 
     private void registerCommands() {

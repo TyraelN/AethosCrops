@@ -1,24 +1,23 @@
 package de.aethos.crops.Testing;
 
 import de.aethos.crops.AethosCrops;
+import de.aethos.crops.Managers.SeedItemManager;
 import de.aethos.crops.Utils.Crop;
-import de.aethos.crops.Utils.CropKey;
 import de.aethos.crops.Utils.Gen.IGen;
+import de.aethos.crops.Utils.SeedGenes;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class AdminCommands {
@@ -105,6 +104,10 @@ public class AdminCommands {
         player.sendMessage(ChatColor.GRAY + "- display-name: " + ChatColor.WHITE + crop.getDisplayName());
         player.sendMessage(ChatColor.GRAY + "- stage: " + ChatColor.WHITE + crop.getStage() + ChatColor.GRAY + "/" + ChatColor.WHITE + crop.getMaxStage());
         player.sendMessage(ChatColor.GRAY + "- health: " + ChatColor.WHITE + String.format("%.2f%%", crop.getHealth()));
+        SeedGenes genes = crop.getGenes();
+        player.sendMessage(ChatColor.GRAY + "- genes: " + ChatColor.WHITE
+                + "growth=" + genes.getGrowth() + ", yield=" + genes.getYield() + ", resistance=" + genes.getResistance()
+                + ChatColor.GRAY + " → " + SeedItemManager.formatStars(genes.getStars()));
         player.sendMessage(ChatColor.GRAY + "- model-path: " + ChatColor.WHITE + crop.getModelPathForStage(crop.getStage()));
         player.sendMessage(ChatColor.GRAY + "- diseases: " + formatDiseaseInfo(crop));
     }
@@ -161,7 +164,7 @@ public class AdminCommands {
 
     private void handleGiveSeed(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /aethoscrops giveseed <ID>");
+            player.sendMessage(ChatColor.RED + "Usage: /aethoscrops giveseed <ID> [Anzahl]");
             return;
         }
 
@@ -173,30 +176,47 @@ public class AdminCommands {
             return;
         }
 
-        ItemStack seed = new ItemStack(Material.WHEAT_SEEDS);
-        ItemMeta meta = seed.getItemMeta();
-        if (meta == null) {
-            player.sendMessage(ChatColor.RED + "Failed to create seed item meta.");
-            return;
+        int amount = 1;
+        if (args.length >= 3) {
+            try {
+                amount = Math.max(1, Math.min(64, Integer.parseInt(args[2])));
+            } catch (NumberFormatException e) {
+                player.sendMessage(ChatColor.RED + "Invalid amount: " + args[2]);
+                return;
+            }
         }
 
-        meta.setDisplayName(ChatColor.GREEN + crop.getDisplayName() + ChatColor.YELLOW + " Seed");
-
-        List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.GRAY + "Custom crop seed");
-        lore.add(ChatColor.DARK_GRAY + "ID: " + crop.getId());
-        meta.setLore(lore);
-
-        meta.getPersistentDataContainer().set(CropKey.CROP_TYPE, PersistentDataType.STRING, crop.getId());
-        seed.setItemMeta(meta);
-
-        Map<Integer, ItemStack> leftovers = player.getInventory().addItem(seed);
-        if (!leftovers.isEmpty()) {
-            leftovers.values().forEach(stack -> player.getWorld().dropItemNaturally(player.getLocation(), stack));
-            player.sendMessage(ChatColor.YELLOW + "Inventory full, dropped seed on the ground.");
+        // Zufallsgene wuerfeln und nach Guete gruppieren - ein Stack je Sterne-Stufe.
+        Map<Integer, List<SeedGenes>> byStars = new TreeMap<>();
+        for (int i = 0; i < amount; i++) {
+            SeedGenes genes = SeedGenes.random();
+            byStars.computeIfAbsent(genes.getStars(), stars -> new ArrayList<>()).add(genes);
         }
 
-        player.sendMessage(ChatColor.GREEN + "Given seed for crop: " + ChatColor.WHITE + crop.getId());
+        SeedItemManager seedItemManager = AethosCrops.getSeedItemManager();
+        boolean dropped = false;
+        for (List<SeedGenes> group : byStars.values()) {
+            ItemStack seed = seedItemManager.createSeedStack(crop, group);
+            if (seed == null) {
+                continue;
+            }
+
+            Map<Integer, ItemStack> leftovers = player.getInventory().addItem(seed);
+            if (!leftovers.isEmpty()) {
+                leftovers.values().forEach(stack -> player.getWorld().dropItemNaturally(player.getLocation(), stack));
+                dropped = true;
+            }
+        }
+
+        if (dropped) {
+            player.sendMessage(ChatColor.YELLOW + "Inventory full, dropped seeds on the ground.");
+        }
+
+        String tiers = byStars.entrySet().stream()
+                .map(entry -> entry.getValue().size() + "x " + entry.getKey() + "★")
+                .collect(Collectors.joining(", "));
+        player.sendMessage(ChatColor.GREEN + "Given " + amount + " seed(s) for crop " + ChatColor.WHITE + crop.getId()
+                + ChatColor.GREEN + " (" + tiers + ")");
     }
 
     private void handleReload(CommandSender sender) {
@@ -224,6 +244,12 @@ public class AdminCommands {
                     .map(Crop::getId)
                     .filter(id -> id.toLowerCase().startsWith(args[1].toLowerCase()))
                     .sorted()
+                    .collect(Collectors.toList());
+        }
+
+        if (args.length == 3 && args[0].equalsIgnoreCase("giveseed")) {
+            return List.of("1", "8", "16", "32", "64").stream()
+                    .filter(amount -> amount.startsWith(args[2]))
                     .collect(Collectors.toList());
         }
 

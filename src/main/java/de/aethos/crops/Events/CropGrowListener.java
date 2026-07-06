@@ -28,7 +28,8 @@ public class CropGrowListener implements Listener {
             return;
         }
 
-        int growthSteps = resolveGrowthSteps(crop.getGrowSpeed());
+        // Wachstums-Gen beschleunigt die konfigurierte Geschwindigkeit (1.0x - 2.0x).
+        int growthSteps = resolveGrowthSteps(crop.getGrowSpeed() * crop.getGenes().growthMultiplier());
         if (growthSteps <= 0) {
             event.setCancelled(true);
             return;

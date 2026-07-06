@@ -3,6 +3,7 @@ package de.aethos.crops.Managers;
 import de.aethos.crops.AethosCrops;
 import de.aethos.crops.Utils.Crop;
 import de.aethos.crops.Utils.Gen.IGen;
+import de.aethos.crops.Utils.SeedGenes;
 import org.bukkit.Chunk;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -196,7 +197,8 @@ public class DataManager {
     private String serialize(Crop crop) {
         StringJoiner diseaseData = new StringJoiner(",");
         crop.getDiseaseLevels().forEach((diseaseId, level) -> diseaseData.add(diseaseId + "=" + level));
-        return crop.getId() + ";" + crop.getStage() + ";" + crop.getHealth() + ";" + diseaseData;
+        return crop.getId() + ";" + crop.getStage() + ";" + crop.getHealth() + ";" + diseaseData
+                + ";" + crop.getGenes().serialize();
     }
 
     @Nullable
@@ -240,6 +242,13 @@ public class DataManager {
                 instance.setHealth(Double.parseDouble(split[2]));
             } catch (NumberFormatException ignored) {
                 instance.setHealth(100.0D);
+            }
+        }
+
+        if (split.length >= 5) {
+            SeedGenes genes = SeedGenes.deserialize(split[4]);
+            if (genes != null) {
+                instance.setGenes(genes);
             }
         }
 

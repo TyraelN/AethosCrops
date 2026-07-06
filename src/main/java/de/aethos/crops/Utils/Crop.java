@@ -19,6 +19,8 @@ public class Crop {
     private final int maxStage;
     private int currentStage = 1;
     private double health = 100.0D;
+    // Gene des gepflanzten Samens; 0 = neutraler Default (Alt-Daten, Vanilla-Verhalten).
+    private SeedGenes genes = new SeedGenes(0, 0, 0);
     private final List<IGen> gens = new ArrayList<>();
     private final Map<String, Integer> diseaseLevels = new HashMap<>();
 
@@ -126,6 +128,16 @@ public class Crop {
 
     public Map<String, Integer> getDiseaseLevels() {
         return Collections.unmodifiableMap(diseaseLevels);
+    }
+
+    public SeedGenes getGenes() {
+        return genes;
+    }
+
+    public void setGenes(SeedGenes genes) {
+        if (genes != null) {
+            this.genes = genes;
+        }
     }
 
     public double getHealth() {
