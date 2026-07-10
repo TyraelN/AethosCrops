@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.UUID;
 
 /**
  * Verwaltet Samen-ItemStacks inklusive Gen-Buchfuehrung.
@@ -139,6 +140,68 @@ public class SeedItemManager {
         return stack.getItemMeta().getPersistentDataContainer().get(CropKey.CROP_TYPE, PersistentDataType.STRING);
     }
 
+    // Analysierte Samen sind vereinzelte Einzel-Items mit exakter Gen-Lore.
+    // Sie stacken nie: Vanilla nicht (einzigartige analysis_id in der Meta),
+    // und die manuelle Merge-Logik schliesst sie ueber canMerge() aus.
+    public boolean isAnalyzed(ItemStack stack) {
+        if (stack == null || stack.getType().isAir()) {
+            return false;
+        }
+
+        ItemMeta meta = stack.getItemMeta();
+        return meta != null && meta.getPersistentDataContainer().has(CropKey.ANALYZED);
+    }
+
+    // Baut aus einem Samen-Stack (Vorlage fuer Name/Material/crop_type) ein
+    // analysiertes Einzel-Item fuer genau einen Gen-Eintrag.
+    public ItemStack createAnalyzedSeed(ItemStack template, SeedGenes gene) {
+        if (template == null || gene == null) {
+            return null;
+        }
+
+        ItemStack single = template.clone();
+        single.setAmount(1);
+
+        ItemMeta meta = single.getItemMeta();
+        if (meta == null) {
+            return single;
+        }
+
+        meta.lore(List.of(
+                Component.translatable("item.aethos.seed.quality")
+                        .fallback("Güte: %s")
+                        .arguments(starsComponent(gene.getStars()))
+                        .color(NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false),
+                statLine("item.aethos.seed.growth", "Wachstum: %s", gene.getGrowth()),
+                statLine("item.aethos.seed.yield", "Ertrag: %s", gene.getYield()),
+                statLine("item.aethos.seed.resistance", "Resistenz: %s", gene.getResistance()),
+                Component.translatable("item.aethos.seed.analyzed")
+                        .fallback("✦ Analysiert")
+                        .color(COLOR_GOLD)
+                        .decoration(TextDecoration.ITALIC, false),
+                Component.translatable("item.aethos.seed.lore")
+                        .fallback("Aethos-Pflanzensamen")
+                        .color(NamedTextColor.DARK_GRAY)
+                        .decoration(TextDecoration.ITALIC, false)
+        ));
+
+        meta.getPersistentDataContainer().set(CropKey.SEED_GENES, PersistentDataType.STRING, gene.serialize());
+        meta.getPersistentDataContainer().set(CropKey.ANALYZED, PersistentDataType.BYTE, (byte) 1);
+        meta.getPersistentDataContainer().set(CropKey.ANALYSIS_ID, PersistentDataType.STRING, UUID.randomUUID().toString());
+        single.setItemMeta(meta);
+        return single;
+    }
+
+    // Exakte Wert-Zeile der Analyse-Lore, z.B. "Wachstum: 120/255".
+    private Component statLine(String key, String fallback, int value) {
+        return Component.translatable(key)
+                .fallback(fallback)
+                .arguments(Component.text(value + "/" + SeedGenes.MAX_VALUE, NamedTextColor.WHITE))
+                .color(NamedTextColor.GRAY)
+                .decoration(TextDecoration.ITALIC, false);
+    }
+
     // Liefert die Gen-Liste des Stacks, repariert auf Stack-Groesse:
     // zu lang -> am Ende kuerzen, zu kurz -> zyklisch auffuellen,
     // leer (Alt-Samen ohne Gene) -> ein Zufallsgen fuer alle Samen.
@@ -202,6 +265,11 @@ public class SeedItemManager {
 
     public boolean canMerge(ItemStack a, ItemStack b) {
         if (!isSeed(a) || !isSeed(b)) {
+            return false;
+        }
+
+        // Analysierte Samen sind vereinzelt und stacken grundsaetzlich nicht.
+        if (isAnalyzed(a) || isAnalyzed(b)) {
             return false;
         }
 
@@ -304,7 +372,7 @@ public class SeedItemManager {
 
         for (int slot = 0; slot < contents.length; slot++) {
             ItemStack stack = contents[slot];
-            if (!isSeed(stack)) {
+            if (!isSeed(stack) || isAnalyzed(stack)) {
                 continue;
             }
 

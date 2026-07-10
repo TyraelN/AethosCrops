@@ -12,6 +12,8 @@ public class CropKey {
     public static final NamespacedKey FUNGAL_TOOL = key("fungal_tool");
     public static final NamespacedKey WEED_TOOL = key("weed_tool");
     public static final NamespacedKey MODEL_PATH = key("model_path");
+    public static final NamespacedKey ANALYZED = key("analyzed");
+    public static final NamespacedKey ANALYSIS_ID = key("analysis_id");
 
     private static NamespacedKey key(String key) {
         return new NamespacedKey(AethosCrops.getInstance(), key);
