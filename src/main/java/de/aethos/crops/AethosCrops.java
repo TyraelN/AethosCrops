@@ -154,7 +154,9 @@ public final class AethosCrops extends JavaPlugin {
 
         @Override
         public String permission() {
-            return "aethoscrops.admin";
+            // Permissions werden pro Subcommand in AdminCommands geprueft
+            // (analyze -> aethoscrops.analyze, Rest -> aethoscrops.admin).
+            return null;
         }
     }
 
