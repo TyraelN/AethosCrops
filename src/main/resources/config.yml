@@ -11,18 +11,39 @@
 # Samen der Elternpflanze gedroppt (Gene +/- mutation-spread).
 genetics:
   mutation-spread: 12
+  # Gen-Wirkung (Defaults; pro Crop unter crops.<id>.genetics ueberschreibbar):
+  # Gen-Wert 255 ergibt Multiplikator 1.0 + max-bonus (Wachstum/Ertrag) bzw.
+  # Krankheits-Chance-Faktor 1.0 - max-reduction (Resistenz).
+  growth-max-bonus: 1.0
+  yield-max-bonus: 1.0
+  resistance-max-reduction: 0.5
+
+# Modelle: 'item-model' ist das Item-Model des Pflanzen-Displays im Resource
+# Pack (Default: "aethos:block/crops/<crop-id>"). Das Wachstums-Stadium waehlt
+# der Client per custom_model_data-Float 0..7 (range_dispatch); die Aethos-Stufe
+# (1..max-stage) wird dafuer linear auf 0..7 skaliert.
+# Ernte-Regeln
+harvest:
+  # Eine ausgewachsene Pflanze wirft immer mindestens einen vererbten Samen ab,
+  # auch wenn alle Drop-Wuerfe fehlschlagen oder die Tabelle keinen Samen enthaelt.
+  guaranteed-seed: true
+
+# Schutz-Regeln
+protection:
+  # true: Trampeln prallt an Aethos-Pflanzen ab (Pflanze + Farmland bleiben).
+  # false: bisheriges Verhalten - Pflanze wird zerstoert und droppt ihre Beute.
+  cancel-trample: true
+
+# Krankheits-Progression (Defaults; pro Crop unter crops.<id>.diseases ueberschreibbar)
+diseases:
+  # Gesundheitsverlust in % pro Wachstums-Tick und Krankheits-Level
+  damage-per-level: 5.0
+  max-level: 5
 
 crops:
   wheat:
-    display-name: "Wheat"
-    stage-model-paths:
-      - "aethos/wheat/stage1"
-      - "aethos/wheat/stage2"
-      - "aethos/wheat/stage3"
-      - "aethos/wheat/stage4"
-      - "aethos/wheat/stage5"
-      - "aethos/wheat/stage6"
-      - "aethos/wheat/stage7"
+    display-name: "Weizen"
+    item-model: "aethos:block/crops/wheat"
 
     # It is recommended to leave this at 1.0 and instead define the time it takes
     # for a plant to grow by adding/removing growth-stages, this makes the
@@ -55,14 +76,8 @@ crops:
           chance: 0.2
 
   corn:
-    display-name: "Corn"
-    stage-model-paths:
-      - "aethos/corn/stage1"
-      - "aethos/corn/stage2"
-      - "aethos/corn/stage3"
-      - "aethos/corn/stage4"
-      - "aethos/corn/stage5"
-      - "aethos/corn/stage6"
+    display-name: "Mais"
+    item-model: "aethos:block/crops/corn"
     grow-speed: 1.0
     max-stage: 6
     allowed-diseases:
@@ -76,19 +91,9 @@ crops:
           chance: 0.7
 
   tomato:
-    display-name: "Tomato"
-    stage-model-paths:
-      - "aethos/tomato/stage1"
-      - "aethos/tomato/stage2"
-      - "aethos/tomato/stage3"
-      - "aethos/tomato/stage4"
-      - "aethos/tomato/stage5"
-      - "aethos/tomato/stage6"
-      - "aethos/tomato/stage7"
-      - "aethos/tomato/stage8"
-      - "aethos/tomato/stage9"
-      - "aethos/tomato/stage10"
-      - "aethos/tomato/stage11"
+    display-name: "Tomate"
+    # Pack-Model heisst "tomatoes" (Plural), daher explizit statt Default.
+    item-model: "aethos:block/crops/tomatoes"
     grow-speed: 1.0
     max-stage: 11
     allowed-diseases:
@@ -112,6 +117,182 @@ crops:
           material: APPLE
           amount: 1
           chance: 0.3
+
+  # ===== Aus dem Resource Pack uebernommene Crops (Modelle: aethos:block/crops/<id>) =====
+  # Crops ohne 'drops'-Eintraege droppen dank Ernte-Garantie mindestens einen
+  # Samen; TODO: Custom-Ernte-Items ergaenzen sobald verfuegbar (Item-Modelle
+  # wie cabbage/garlic/rice_panicle liegen schon unter aethos:item/crops/).
+
+  barley:
+    display-name: "Gerste"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      weed: 0.3
+
+  beetroots:
+    display-name: "Rote Bete"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      bugs: 0.35
+      fungalinfection: 0.15
+    drops:
+      entries:
+        beetroot_item:
+          material: BEETROOT
+          amount: 1
+          chance: 1.0
+        beetroot_item2:
+          material: BEETROOT
+          amount: 1
+          chance: 0.4
+
+  cabbages:
+    display-name: "Kohl"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      bugs: 0.45
+      weed: 0.3
+
+  canola:
+    display-name: "Raps"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      bugs: 0.3
+
+  carrots:
+    display-name: "Karotte"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      bugs: 0.35
+      fungalinfection: 0.15
+    drops:
+      entries:
+        carrot_item:
+          material: CARROT
+          amount: 1
+          chance: 1.0
+        carrot_item2:
+          material: CARROT
+          amount: 1
+          chance: 0.5
+
+  courgette:
+    display-name: "Zucchini"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      fungalinfection: 0.25
+      bugs: 0.3
+
+  garlic:
+    display-name: "Knoblauch"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      fungalinfection: 0.2
+
+  melon:
+    display-name: "Melone"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      fungalinfection: 0.25
+      bugs: 0.3
+    drops:
+      entries:
+        melon_item:
+          material: MELON_SLICE
+          amount: 3
+          chance: 1.0
+        melon_item2:
+          material: MELON_SLICE
+          amount: 2
+          chance: 0.5
+
+  oats:
+    display-name: "Hafer"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      weed: 0.3
+
+  onions:
+    display-name: "Zwiebel"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      bugs: 0.35
+      fungalinfection: 0.15
+
+  potatoes:
+    display-name: "Kartoffel"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      bugs: 0.35
+      fungalinfection: 0.2
+    drops:
+      entries:
+        potato_item:
+          material: POTATO
+          amount: 1
+          chance: 1.0
+        potato_item2:
+          material: POTATO
+          amount: 1
+          chance: 0.5
+        potato_poisonous:
+          material: POISONOUS_POTATO
+          amount: 1
+          chance: 0.02
+
+  pumpkin:
+    display-name: "Kürbis"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      fungalinfection: 0.25
+      bugs: 0.3
+    drops:
+      entries:
+        pumpkin_item:
+          material: PUMPKIN
+          amount: 1
+          chance: 1.0
+
+  rice:
+    display-name: "Reis"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      weed: 0.3
+      fungalinfection: 0.2
+
+  sunflower:
+    display-name: "Sonnenblume"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      bugs: 0.3
+    drops:
+      entries:
+        sunflower_item:
+          material: SUNFLOWER
+          amount: 1
+          chance: 1.0
+
+  turnip:
+    display-name: "Speiserübe"
+    grow-speed: 1.0
+    max-stage: 7
+    allowed-diseases:
+      bugs: 0.35
+      fungalinfection: 0.15
 
 disease-treatment:
   wrong-leaf-health-penalty: 2.0

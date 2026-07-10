@@ -28,8 +28,8 @@ public class CropGrowListener implements Listener {
             return;
         }
 
-        // Wachstums-Gen beschleunigt die konfigurierte Geschwindigkeit (1.0x - 2.0x).
-        int growthSteps = resolveGrowthSteps(crop.getGrowSpeed() * crop.getGenes().growthMultiplier());
+        // Wachstums-Gen beschleunigt die konfigurierte Geschwindigkeit (max. Wirkung aus dem Crop-Tuning).
+        int growthSteps = resolveGrowthSteps(crop.getGrowSpeed() * crop.getGenes().growthMultiplier(crop.getTuning().growthMaxBonus()));
         if (growthSteps <= 0) {
             event.setCancelled(true);
             return;
@@ -41,11 +41,7 @@ public class CropGrowListener implements Listener {
         }
         crop = cropManager.updateGen(crop);
 
-        if (crop.isAtMaxStage()) {
-            cropManager.setOriginalLastStage(event.getNewState());
-        } else {
-            cropManager.setOriginalFirstStage(event.getNewState());
-        }
+        cropManager.syncOriginalStage(event.getNewState(), crop);
 
         dataManager.updateCrop(event.getBlock(), crop);
         AethosCrops.getDisplayManager().spawnOrUpdateDisplay(event.getBlock(), crop);

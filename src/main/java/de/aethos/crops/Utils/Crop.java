@@ -12,11 +12,14 @@ import java.util.Map;
 public class Crop {
     private final String id;
     private final String displayName;
-    private final List<String> stageModelPaths;
+    // Item-Model des Displays (z.B. "aethos:block/crops/barley"); die Stufe
+    // waehlt das Stadium per custom_model_data-Float (siehe DisplayManager).
+    private final String itemModel;
     private final double growSpeed;
     private final DropTable dropTable;
     private final LinkedHashMap<IGen, Double> diseaseChances;
     private final int maxStage;
+    private final CropTuning tuning;
     private int currentStage = 1;
     private double health = 100.0D;
     // Gene des gepflanzten Samens; 0 = neutraler Default (Alt-Daten, Vanilla-Verhalten).
@@ -24,14 +27,19 @@ public class Crop {
     private final List<IGen> gens = new ArrayList<>();
     private final Map<String, Integer> diseaseLevels = new HashMap<>();
 
-    public Crop(String id, String displayName, List<String> stageModelPaths, double growSpeed, DropTable dropTable, Map<IGen, Double> diseaseChances, int maxStage) {
+    public Crop(String id, String displayName, String itemModel, double growSpeed, DropTable dropTable, Map<IGen, Double> diseaseChances, int maxStage, CropTuning tuning) {
         this.id = id;
         this.displayName = displayName;
-        this.stageModelPaths = List.copyOf(stageModelPaths);
+        this.itemModel = itemModel;
         this.growSpeed = growSpeed;
         this.dropTable = dropTable;
         this.diseaseChances = new LinkedHashMap<>(diseaseChances);
         this.maxStage = maxStage;
+        this.tuning = tuning;
+    }
+
+    public CropTuning getTuning() {
+        return tuning;
     }
 
     public String getId() {
@@ -42,8 +50,8 @@ public class Crop {
         return displayName;
     }
 
-    public List<String> getStageModelPaths() {
-        return stageModelPaths;
+    public String getItemModel() {
+        return itemModel;
     }
 
     public double getGrowSpeed() {
@@ -70,9 +78,16 @@ public class Crop {
         return Collections.unmodifiableList(new ArrayList<>(gens));
     }
 
-    public String getModelPathForStage(int stage) {
-        int clampedStage = Math.max(1, Math.min(stage, maxStage));
-        return stageModelPaths.get(clampedStage - 1);
+    // Bildet die eigene Stufe (1..maxStage) linear auf eine externe Skala 0..max
+    // ab (Vanilla-Age bzw. Modell-Stadium). Den Endwert gibt es erst auf der
+    // Max-Stufe, damit "ausgewachsen" aussen nie zu frueh erreicht wird.
+    public int scaleStageTo(int max) {
+        if (isAtMaxStage() || maxStage <= 1) {
+            return max;
+        }
+
+        int scaled = Math.round((currentStage - 1) * (float) max / (maxStage - 1));
+        return Math.min(scaled, max - 1);
     }
 
     public int getStage() {
@@ -123,7 +138,7 @@ public class Crop {
         }
 
         addDisease(disease);
-        diseaseLevels.put(disease.getId(), Math.min(level, 5));
+        diseaseLevels.put(disease.getId(), Math.min(level, tuning.diseaseMaxLevel()));
     }
 
     public Map<String, Integer> getDiseaseLevels() {

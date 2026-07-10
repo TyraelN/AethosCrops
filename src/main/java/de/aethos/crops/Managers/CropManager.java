@@ -42,14 +42,14 @@ public class CropManager {
 
             boolean wasActive = crop.getDiseases().contains(disease);
             int previousLevel = Math.max(1, crop.getDiseaseLevel(disease));
-            // Resistenz-Gen senkt die Krankheits-Wahrscheinlichkeit (1.0x - 0.5x).
-            double effectiveChance = Math.min(1.0D, chance * crop.getGenes().diseaseChanceMultiplier());
+            // Resistenz-Gen senkt die Krankheits-Wahrscheinlichkeit (max. Wirkung aus dem Crop-Tuning).
+            double effectiveChance = Math.min(1.0D, chance * crop.getGenes().diseaseChanceMultiplier(crop.getTuning().resistanceMaxReduction()));
             boolean shouldRemainActive = ThreadLocalRandom.current().nextDouble() <= effectiveChance;
 
             if (shouldRemainActive) {
                 if (wasActive) {
-                    crop.reduceHealthPercent(previousLevel * 5.0D);
-                    crop.setDiseaseLevel(disease, Math.min(previousLevel + 1, 5));
+                    crop.reduceHealthPercent(previousLevel * crop.getTuning().diseaseDamagePerLevel());
+                    crop.setDiseaseLevel(disease, Math.min(previousLevel + 1, crop.getTuning().diseaseMaxLevel()));
                 } else {
                     crop.setDiseaseLevel(disease, 1);
                     activeDisease = disease;
@@ -77,15 +77,17 @@ public class CropManager {
 
     // Selects and drops all valid harvest items from a crop drop table
     public void dropHarvestDrops(Block block, Crop crop) {
-        if (block == null || crop == null || crop.getDropTable() == null) {
+        if (block == null || crop == null) {
             return;
         }
 
         // Gesundheit und Ertrags-Gen skalieren die Drop-Menge gemeinsam.
-        double amountMultiplier = (crop.getHealth() / 100.0D) * crop.getGenes().yieldMultiplier();
+        double amountMultiplier = (crop.getHealth() / 100.0D) * crop.getGenes().yieldMultiplier(crop.getTuning().yieldMaxBonus());
         int mutationSpread = AethosCrops.getConfigManager().getMutationSpread();
+        int seedsDropped = 0;
 
-        for (DropEntry entry : crop.getDropTable().getEntries()) {
+        List<DropEntry> entries = crop.getDropTable() != null ? crop.getDropTable().getEntries() : List.of();
+        for (DropEntry entry : entries) {
             if (entry == null || entry.getItem() == null || entry.getChance() <= 0) {
                 continue;
             }
@@ -103,11 +105,8 @@ public class CropManager {
                 // Samen-Drops erben die Gene der Elternpflanze (leicht mutiert);
                 // jeder Samen einzeln, damit jede Mutation ihren eigenen Stack bildet.
                 for (int i = 0; i < scaledAmount; i++) {
-                    SeedGenes inherited = crop.getGenes().mutate(mutationSpread);
-                    ItemStack seed = AethosCrops.getSeedItemManager().createSeedStack(crop, List.of(inherited));
-                    if (seed != null) {
-                        block.getWorld().dropItem(block.getLocation(), seed);
-                    }
+                    dropInheritedSeed(block, crop, mutationSpread);
+                    seedsDropped++;
                 }
                 continue;
             }
@@ -115,6 +114,21 @@ public class CropManager {
             ItemStack scaledDrop = entry.getItem().clone();
             scaledDrop.setAmount(scaledAmount);
             block.getWorld().dropItem(block.getLocation(), scaledDrop);
+        }
+
+        // Eine Ernte wirft immer mindestens einen Samen ab, damit die Linie
+        // auch bei verpatzten Wuerfen oder kranker Pflanze nie ausstirbt
+        // (abschaltbar ueber harvest.guaranteed-seed).
+        if (seedsDropped == 0 && AethosCrops.getConfigManager().isGuaranteedSeedDrop()) {
+            dropInheritedSeed(block, crop, mutationSpread);
+        }
+    }
+
+    private void dropInheritedSeed(Block block, Crop crop, int mutationSpread) {
+        SeedGenes inherited = crop.getGenes().mutate(mutationSpread);
+        ItemStack seed = AethosCrops.getSeedItemManager().createSeedStack(crop, List.of(inherited));
+        if (seed != null) {
+            block.getWorld().dropItem(block.getLocation(), seed);
         }
     }
 
@@ -182,11 +196,12 @@ public class CropManager {
         Crop crop = new Crop(
                 template.getId(),
                 template.getDisplayName(),
-                template.getStageModelPaths(),
+                template.getItemModel(),
                 template.getGrowSpeed(),
                 template.getDropTable(),
                 template.getDiseaseChances(),
-                template.getMaxStage()
+                template.getMaxStage(),
+                template.getTuning()
         );
 
         // Verbraucht wird immer der letzte Samen des Stacks - seine Gene
@@ -245,15 +260,6 @@ public class CropManager {
         applyAge(block, 0);
     }
 
-    // Changes the original wheat crop growth stage to its first stage on a pending block state
-    public void setOriginalFirstStage(BlockState blockState) {
-        if (blockState == null) {
-            return;
-        }
-
-        applyAge(blockState, 0);
-    }
-
     // Changes the original wheat crop growth stage to its last stage so it no longer grows
     public void setOriginalLastStage(Block block) {
         if (block == null) {
@@ -268,9 +274,10 @@ public class CropManager {
         applyAge(block, ageable.getMaximumAge());
     }
 
-    // Changes the original wheat crop growth stage to its last stage on a pending block state
-    public void setOriginalLastStage(BlockState blockState) {
-        if (blockState == null) {
+    // Synchronisiert die Vanilla-Wachstumsstufe (liefert die Hitbox) proportional
+    // zur Aethos-Stufe: Stufe 1 -> Age 0, Max-Stufe -> Age 7, dazwischen linear.
+    public void syncOriginalStage(BlockState blockState, Crop crop) {
+        if (blockState == null || crop == null) {
             return;
         }
 
@@ -279,7 +286,13 @@ public class CropManager {
             return;
         }
 
-        applyAge(blockState, ageable.getMaximumAge());
+        applyAge(blockState, scaledVanillaAge(crop, ageable.getMaximumAge()));
+    }
+
+    private int scaledVanillaAge(Crop crop, int maxAge) {
+        // Vor der Max-Stufe erreicht scaleStageTo nie das Vanilla-Maximum, sonst
+        // wuerden keine BlockGrowEvents mehr feuern und die Pflanze bliebe stehen.
+        return crop.scaleStageTo(maxAge);
     }
 
     private void applyAge(Block block, int age) {

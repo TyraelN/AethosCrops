@@ -108,7 +108,8 @@ public class AdminCommands {
         player.sendMessage(ChatColor.GRAY + "- genes: " + ChatColor.WHITE
                 + "growth=" + genes.getGrowth() + ", yield=" + genes.getYield() + ", resistance=" + genes.getResistance()
                 + ChatColor.GRAY + " → " + SeedItemManager.formatStars(genes.getStars()));
-        player.sendMessage(ChatColor.GRAY + "- model-path: " + ChatColor.WHITE + crop.getModelPathForStage(crop.getStage()));
+        player.sendMessage(ChatColor.GRAY + "- item-model: " + ChatColor.WHITE + crop.getItemModel()
+                + ChatColor.GRAY + " (model-stage " + ChatColor.WHITE + crop.scaleStageTo(7) + ChatColor.GRAY + ")");
         player.sendMessage(ChatColor.GRAY + "- diseases: " + formatDiseaseInfo(crop));
     }
 

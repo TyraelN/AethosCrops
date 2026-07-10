@@ -226,11 +226,12 @@ public class DataManager {
         Crop instance = new Crop(
                 crop.getId(),
                 crop.getDisplayName(),
-                crop.getStageModelPaths(),
+                crop.getItemModel(),
                 crop.getGrowSpeed(),
                 crop.getDropTable(),
                 crop.getDiseaseChances(),
-                crop.getMaxStage()
+                crop.getMaxStage(),
+                crop.getTuning()
         );
 
         for (int i = 1; i < stage; i++) {
