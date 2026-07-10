@@ -5,6 +5,7 @@ import de.aethos.crops.Events.CropGrowListener;
 import de.aethos.crops.Events.CropPlantListener;
 import de.aethos.crops.Events.DiseaseTreatmentListener;
 import de.aethos.crops.Events.FarmlandTrampleListener;
+import de.aethos.crops.Events.SeedAnalysisListener;
 import de.aethos.crops.Events.SeedStackListener;
 import de.aethos.crops.Events.WaterDestroyCropListener;
 import de.aethos.crops.Managers.ConfigManager;
@@ -43,6 +44,7 @@ public final class AethosCrops extends JavaPlugin {
     public static ConfigManager configManager;
     public static GenRegistry genRegistry;
     public static SeedItemManager seedItemManager;
+    public static SeedAnalysisListener seedAnalysisListener;
 
     @Override
     public void onEnable() {
@@ -56,6 +58,7 @@ public final class AethosCrops extends JavaPlugin {
         genRegistry = new GenRegistry();
         configManager = new ConfigManager(this);
         configManager.loadCrops(cropRegistry);
+        seedAnalysisListener = new SeedAnalysisListener();
 
         registerListeners();
         registerCommands();
@@ -100,6 +103,10 @@ public final class AethosCrops extends JavaPlugin {
         return seedItemManager;
     }
 
+    public static SeedAnalysisListener getSeedAnalysisListener() {
+        return seedAnalysisListener;
+    }
+
     public static AethosCrops getInstance() {
         return instance;
     }
@@ -114,6 +121,7 @@ public final class AethosCrops extends JavaPlugin {
         pluginManager.registerEvents(new FarmlandTrampleListener(), this);
         pluginManager.registerEvents(new WaterDestroyCropListener(), this);
         pluginManager.registerEvents(new SeedStackListener(), this);
+        pluginManager.registerEvents(seedAnalysisListener, this);
     }
 
     private void registerCommands() {
@@ -146,7 +154,9 @@ public final class AethosCrops extends JavaPlugin {
 
         @Override
         public String permission() {
-            return "aethoscrops.admin";
+            // Permissions werden pro Subcommand in AdminCommands geprueft
+            // (analyze -> aethoscrops.analyze, Rest -> aethoscrops.admin).
+            return null;
         }
     }
 

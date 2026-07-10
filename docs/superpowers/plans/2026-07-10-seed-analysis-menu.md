@@ -33,7 +33,7 @@
   - `ItemStack createAnalyzedSeed(ItemStack template, SeedGenes gene)` — liefert Einzel-Item (amount 1) mit exakter Gen-Lore, `analyzed`-Flag und einzigartiger `analysis_id`.
   - `canMerge(a, b)` liefert `false`, sobald einer der Stacks analysiert ist; `consolidate(...)` überspringt analysierte Stacks.
 
-- [ ] **Step 1: Neue PDC-Keys in `CropKey` ergänzen**
+- [x] **Step 1: Neue PDC-Keys in `CropKey` ergänzen**
 
 In `CropKey.java` nach `MODEL_PATH` einfügen:
 
@@ -42,7 +42,7 @@ In `CropKey.java` nach `MODEL_PATH` einfügen:
     public static final NamespacedKey ANALYSIS_ID = key("analysis_id");
 ```
 
-- [ ] **Step 2: `isAnalyzed` und `createAnalyzedSeed` in `SeedItemManager` ergänzen**
+- [x] **Step 2: `isAnalyzed` und `createAnalyzedSeed` in `SeedItemManager` ergänzen**
 
 Import ergänzen: `java.util.UUID`.
 
@@ -112,7 +112,7 @@ Im Abschnitt `/* Lesen/Schreiben */` nach `getCropId(...)` einfügen:
     }
 ```
 
-- [ ] **Step 3: Stacking-Ausschluss in `canMerge` und `consolidate`**
+- [x] **Step 3: Stacking-Ausschluss in `canMerge` und `consolidate`**
 
 In `canMerge(ItemStack a, ItemStack b)` direkt nach dem `isSeed`-Check einfügen:
 
@@ -139,12 +139,12 @@ wird
             }
 ```
 
-- [ ] **Step 4: Kompilieren**
+- [x] **Step 4: Kompilieren**
 
 Run: `mvn -q -f /root/mc-admin/dev/plugins/AethosCrops/pom.xml clean package`
 Expected: BUILD SUCCESS, keine Compiler-Fehler.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /root/mc-admin/dev/plugins/AethosCrops
@@ -164,7 +164,7 @@ git commit -m "feat: analysierte Samen (Einzel-Items mit exakter Gen-Lore, vom S
 - Consumes: `SeedItemManager.isSeed/isAnalyzed/getGenes/createAnalyzedSeed` (Task 1).
 - Produces: `void open(Player player)` — öffnet das Analyse-Menü; von `AdminCommands` (Task 3) aufgerufen. Statischer Zugriff: `AethosCrops.getSeedAnalysisListener()`.
 
-- [ ] **Step 1: Listener-Klasse anlegen**
+- [x] **Step 1: Listener-Klasse anlegen**
 
 Vollständiger Inhalt von `SeedAnalysisListener.java`:
 
@@ -413,7 +413,7 @@ public class SeedAnalysisListener implements Listener {
 }
 ```
 
-- [ ] **Step 2: In `AethosCrops` registrieren und Getter anlegen**
+- [x] **Step 2: In `AethosCrops` registrieren und Getter anlegen**
 
 Import ergänzen: `de.aethos.crops.Events.SeedAnalysisListener`.
 
@@ -443,12 +443,12 @@ Getter bei den anderen Gettern:
     }
 ```
 
-- [ ] **Step 3: Kompilieren**
+- [x] **Step 3: Kompilieren**
 
 Run: `mvn -q -f /root/mc-admin/dev/plugins/AethosCrops/pom.xml clean package`
 Expected: BUILD SUCCESS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 cd /root/mc-admin/dev/plugins/AethosCrops
@@ -469,7 +469,7 @@ git commit -m "feat: Samen-Analyse-Menue (GUI mit Eingabeflaeche und Analysieren
 - Consumes: `AethosCrops.getSeedAnalysisListener().open(Player)` (Task 2).
 - Produces: `/aethoscrops analyze` (Permission `aethoscrops.analyze`), bisherige Subcommands hinter `aethoscrops.admin`; `suggest()` filtert nach Permission.
 
-- [ ] **Step 1: `CropsCommand.permission()` öffnen**
+- [x] **Step 1: `CropsCommand.permission()` öffnen**
 
 In `AethosCrops.java`, innere Klasse `CropsCommand`: die Methode
 
@@ -491,7 +491,7 @@ ersetzen durch
         }
 ```
 
-- [ ] **Step 2: Permission-Prüfung pro Subcommand in `AdminCommands.execute`**
+- [x] **Step 2: Permission-Prüfung pro Subcommand in `AdminCommands.execute`**
 
 Die bisherige `execute(...)`-Methode komplett ersetzen durch:
 
@@ -543,7 +543,7 @@ Die bisherige `execute(...)`-Methode komplett ersetzen durch:
     }
 ```
 
-- [ ] **Step 3: `sendUsage` und `suggest` nach Permission filtern**
+- [x] **Step 3: `sendUsage` und `suggest` nach Permission filtern**
 
 `sendUsage(Player player)` ersetzen durch:
 
@@ -586,7 +586,7 @@ Und die drei folgenden `giveseed`/`givediseasetool`-Blöcke jeweils zusätzlich 
         if (args.length == 2 && args[0].equalsIgnoreCase("giveseed") && sender.hasPermission("aethoscrops.admin")) {
 ```
 
-- [ ] **Step 4: Permission in `paper-plugin.yml` deklarieren**
+- [x] **Step 4: Permission in `paper-plugin.yml` deklarieren**
 
 Unter `permissions:` ergänzen:
 
@@ -596,12 +596,12 @@ Unter `permissions:` ergänzen:
     default: op
 ```
 
-- [ ] **Step 5: Kompilieren**
+- [x] **Step 5: Kompilieren**
 
 Run: `mvn -q -f /root/mc-admin/dev/plugins/AethosCrops/pom.xml clean package`
 Expected: BUILD SUCCESS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd /root/mc-admin/dev/plugins/AethosCrops
@@ -615,7 +615,7 @@ git commit -m "feat: /aethoscrops analyze mit eigener Permission, Admin-Subcomma
 
 **Files:** keine Quelländerungen (nur Build/Deploy/Test).
 
-- [ ] **Step 1: Bauen und auf DEV deployen**
+- [x] **Step 1: Bauen und auf DEV deployen**
 
 ```bash
 bash /root/mc-admin/scripts/build-plugin.sh AethosCrops
@@ -624,11 +624,11 @@ bash /root/mc-admin/scripts/deploy-plugins.sh --only AethosCrops-1.0.0-SNAPSHOT.
 
 Expected: JAR landet in `/root/mc-admin/servers/development/plugins/`.
 
-- [ ] **Step 2: DEV-Server neu starten**
+- [x] **Step 2: DEV-Server neu starten**
 
 WICHTIG (Memory „Restart-Ansage"): vorher Spieler auf DEV prüfen und per `say` Grund + Dauer ankündigen, auch auf DEV. Danach Neustart über das übliche Verfahren (`/root/mc-admin/scripts/manage.sh` bzw. `mc.sh`).
 
-- [ ] **Step 3: In-Game-Verifikation (Testbot aus experimental/ oder manuell)**
+- [x] **Step 3: In-Game-Verifikation (Testbot aus experimental/ oder manuell)**
 
 Checkliste (aus dem Spec):
 1. Ohne Permission: `/acrops analyze` → rote Fehlermeldung; Tab-Complete zeigt `analyze` nicht.
@@ -640,7 +640,7 @@ Checkliste (aus dem Spec):
 7. Nicht-Samen-Items (z.B. Weizen) lassen sich weder per Klick noch Shift-Klick noch Drag einlegen.
 8. Erneut analysieren: bereits analysierte Samen im Menü bleiben beim Button-Klick unverändert.
 
-- [ ] **Step 4: Abschluss-Commit (falls Fixes nötig waren) und Plan-Checkboxen aktualisieren**
+- [x] **Step 4: Abschluss-Commit (falls Fixes nötig waren) und Plan-Checkboxen aktualisieren**
 
 ```bash
 cd /root/mc-admin/dev/plugins/AethosCrops

@@ -10,3 +10,6 @@ permissions:
   aethoscrops.admin:
     description: Zugriff auf die AethosCrops-Verwaltungsbefehle.
     default: op
+  aethoscrops.analyze:
+    description: Erlaubt das Samen-Analyse-Menü (/aethoscrops analyze).
+    default: op

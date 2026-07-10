@@ -6,9 +6,10 @@ import java.util.concurrent.ThreadLocalRandom;
  * Genetische Werte eines einzelnen Samens, jeweils im Byte-Bereich 0-255.
  * <p>
  * 0 ist der neutrale Default (Vanilla-Verhalten); Gene wirken nur verbessernd:
- * growth     - beschleunigt das Wachstum (1.0x - 2.0x)
- * yield      - erhoeht die Drop-Menge bei der Ernte (1.0x - 2.0x)
- * resistance - senkt die Krankheits-Wahrscheinlichkeit (Faktor 1.0x - 0.5x)
+ * growth     - beschleunigt das Wachstum
+ * yield      - erhoeht die Drop-Menge bei der Ernte
+ * resistance - senkt die Krankheits-Wahrscheinlichkeit
+ * Wie stark maximal, bestimmt das CropTuning des jeweiligen Crops (Config).
  * <p>
  * Nach aussen sichtbar ist nur die Sterne-Guete (1-5), der gerundete
  * Durchschnitt aller drei Werte. Samen gleicher Guete stacken miteinander.
@@ -49,16 +50,18 @@ public final class SeedGenes {
         return 1 + ((growth + yield + resistance) * 5) / (3 * (MAX_VALUE + 1));
     }
 
-    public double growthMultiplier() {
-        return 1.0D + growth / (double) MAX_VALUE;
+    // Die maximale Wirkung je Gen kommt aus dem Crop-Tuning (Config):
+    // Gen-Wert 255 ergibt 1.0 + maxBonus bzw. 1.0 - maxReduction.
+    public double growthMultiplier(double maxBonus) {
+        return 1.0D + growth * maxBonus / MAX_VALUE;
     }
 
-    public double yieldMultiplier() {
-        return 1.0D + yield / (double) MAX_VALUE;
+    public double yieldMultiplier(double maxBonus) {
+        return 1.0D + yield * maxBonus / MAX_VALUE;
     }
 
-    public double diseaseChanceMultiplier() {
-        return 1.0D - resistance / (2.0D * MAX_VALUE);
+    public double diseaseChanceMultiplier(double maxReduction) {
+        return 1.0D - resistance * maxReduction / MAX_VALUE;
     }
 
     // Vererbung: jeder Wert weicht zufaellig um bis zu +/- spread vom Elternwert ab.

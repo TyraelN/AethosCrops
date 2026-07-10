@@ -4,10 +4,12 @@ import de.aethos.crops.AethosCrops;
 import de.aethos.crops.Utils.Crop;
 import de.aethos.crops.Utils.CropKey;
 import de.aethos.crops.Utils.CropRegistry;
+import de.aethos.crops.Utils.CropTuning;
 import de.aethos.crops.Utils.DropTable;
 import de.aethos.crops.Utils.Gen.IGen;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -37,6 +39,16 @@ public class ConfigManager {
     public int getMutationSpread() {
         int spread = plugin.getConfig().getInt("genetics.mutation-spread", 12);
         return Math.max(0, Math.min(127, spread));
+    }
+
+    // Ernte wirft immer mindestens einen vererbten Samen ab.
+    public boolean isGuaranteedSeedDrop() {
+        return plugin.getConfig().getBoolean("harvest.guaranteed-seed", true);
+    }
+
+    // true: Trampeln prallt an Aethos-Pflanzen ab; false: Pflanze wird zerstoert (mit Drop).
+    public boolean isTrampleProtected() {
+        return plugin.getConfig().getBoolean("protection.cancel-trample", true);
     }
 
     public void loadCrops(CropRegistry cropRegistry) {
@@ -88,51 +100,47 @@ public class ConfigManager {
             return null;
         }
 
-        List<String> stageModelPaths = parseStageModelPaths(cropId, cropSection, maxStage);
-        if (stageModelPaths == null) {
+        String itemModel = parseItemModel(cropId, cropSection);
+        if (itemModel == null) {
             return null;
         }
 
         Map<IGen, Double> diseaseChances = parseDiseaseChances(cropId, cropSection);
         DropTable dropTable = parseDropTable(cropId, cropSection.getConfigurationSection("drops"));
+        CropTuning tuning = parseTuning(cropSection);
 
-        return new Crop(cropId, displayName, stageModelPaths, growSpeed, dropTable, diseaseChances, maxStage);
+        return new Crop(cropId, displayName, itemModel, growSpeed, dropTable, diseaseChances, maxStage, tuning);
     }
 
-    private List<String> parseStageModelPaths(String cropId, ConfigurationSection cropSection, int maxStage) {
-        List<String> configuredPaths = cropSection.getStringList("stage-model-paths");
-        if (!configuredPaths.isEmpty()) {
-            if (configuredPaths.size() < maxStage) {
-                plugin.getLogger().warning("Skipping crop '" + cropId + "': 'stage-model-paths' must contain at least 'max-stage' entries.");
-                return null;
-            }
+    // Balancing pro Crop; fehlende Werte fallen auf die globalen Abschnitte
+    // 'genetics' bzw. 'diseases' zurueck (crops.<id>.genetics/diseases ueberschreibt).
+    private CropTuning parseTuning(ConfigurationSection cropSection) {
+        FileConfiguration config = plugin.getConfig();
 
-            List<String> stageModelPaths = new ArrayList<>();
-            for (int i = 0; i < maxStage; i++) {
-                String path = configuredPaths.get(i);
-                if (path == null || path.isBlank()) {
-                    plugin.getLogger().warning("Skipping crop '" + cropId + "': 'stage-model-paths' contains blank value at stage " + (i + 1) + ".");
-                    return null;
-                }
+        double growthMaxBonus = Math.max(0.0D, cropSection.getDouble("genetics.growth-max-bonus",
+                config.getDouble("genetics.growth-max-bonus", 1.0D)));
+        double yieldMaxBonus = Math.max(0.0D, cropSection.getDouble("genetics.yield-max-bonus",
+                config.getDouble("genetics.yield-max-bonus", 1.0D)));
+        double resistanceMaxReduction = Math.min(1.0D, Math.max(0.0D, cropSection.getDouble("genetics.resistance-max-reduction",
+                config.getDouble("genetics.resistance-max-reduction", 0.5D))));
+        double diseaseDamagePerLevel = Math.max(0.0D, cropSection.getDouble("diseases.damage-per-level",
+                config.getDouble("diseases.damage-per-level", 5.0D)));
+        int diseaseMaxLevel = Math.max(1, cropSection.getInt("diseases.max-level",
+                config.getInt("diseases.max-level", 5)));
 
-                stageModelPaths.add(path);
-            }
+        return new CropTuning(growthMaxBonus, yieldMaxBonus, resistanceMaxReduction, diseaseDamagePerLevel, diseaseMaxLevel);
+    }
 
-            return stageModelPaths;
-        }
-
-        String modelBasePath = cropSection.getString("model-base-path");
-        if (modelBasePath == null || modelBasePath.isBlank()) {
-            plugin.getLogger().warning("Skipping crop '" + cropId + "': missing 'stage-model-paths' (or legacy 'model-base-path').");
+    // Item-Model der Pflanzen-Displays; das Wachstums-Stadium waehlt der Client
+    // per custom_model_data-Float aus (range_dispatch im Resource Pack).
+    private String parseItemModel(String cropId, ConfigurationSection cropSection) {
+        String itemModel = cropSection.getString("item-model", "aethos:block/crops/" + cropId);
+        if (NamespacedKey.fromString(itemModel) == null) {
+            plugin.getLogger().warning("Skipping crop '" + cropId + "': 'item-model' is not a valid namespaced key: " + itemModel);
             return null;
         }
 
-        List<String> fallbackPaths = new ArrayList<>();
-        for (int i = 1; i <= maxStage; i++) {
-            fallbackPaths.add(modelBasePath + "/stage" + i);
-        }
-
-        return fallbackPaths;
+        return itemModel;
     }
 
 

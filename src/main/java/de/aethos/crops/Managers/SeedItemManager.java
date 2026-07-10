@@ -4,7 +4,11 @@ import de.aethos.crops.AethosCrops;
 import de.aethos.crops.Utils.Crop;
 import de.aethos.crops.Utils.CropKey;
 import de.aethos.crops.Utils.SeedGenes;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -16,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.UUID;
 
 /**
  * Verwaltet Samen-ItemStacks inklusive Gen-Buchfuehrung.
@@ -52,10 +57,17 @@ public class SeedItemManager {
         }
 
         int stars = genes.get(0).getStars();
-        meta.setDisplayName(ChatColor.GREEN + crop.getDisplayName() + ChatColor.YELLOW + " Seed");
-        meta.setLore(List.of(
-                ChatColor.GRAY + "Güte: " + formatStars(stars),
-                ChatColor.DARK_GRAY + "Custom crop seed"
+        meta.displayName(seedName(crop));
+        meta.lore(List.of(
+                Component.translatable("item.aethos.seed.quality")
+                        .fallback("Güte: %s")
+                        .arguments(starsComponent(stars))
+                        .color(NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false),
+                Component.translatable("item.aethos.seed.lore")
+                        .fallback("Aethos-Pflanzensamen")
+                        .color(NamedTextColor.DARK_GRAY)
+                        .decoration(TextDecoration.ITALIC, false)
         ));
         meta.getPersistentDataContainer().set(CropKey.CROP_TYPE, PersistentDataType.STRING, crop.getId());
         meta.getPersistentDataContainer().set(CropKey.SEED_GENES, PersistentDataType.STRING, serialize(genes));
@@ -63,9 +75,43 @@ public class SeedItemManager {
         return seed;
     }
 
-    public static String formatStars(int stars) {
+    // Tier-Farben der Guete: 1-2 Kupfer, 3-4 Silber, 5 Gold.
+    private static final TextColor COLOR_COPPER = TextColor.color(0xB87333);
+    private static final TextColor COLOR_SILVER = TextColor.color(0xC0C0C0);
+    private static final TextColor COLOR_GOLD = TextColor.color(0xFFD700);
+
+    // Name als TranslatableComponent: Uebersetzung liefert das Resource Pack
+    // (Key "item.aethos.seed" mit dem Crop-Namen "crop.aethos.<id>" als Argument);
+    // der Fallback ist die deutsche Version aus der Config.
+    private Component seedName(Crop crop) {
+        Component cropName = Component.translatable("crop.aethos." + crop.getId())
+                .fallback(crop.getDisplayName())
+                .color(NamedTextColor.GREEN);
+
+        return Component.translatable("item.aethos.seed")
+                .fallback("%s-Samen")
+                .arguments(cropName)
+                .color(NamedTextColor.YELLOW)
+                .decoration(TextDecoration.ITALIC, false);
+    }
+
+    public static Component starsComponent(int stars) {
         int clamped = Math.max(1, Math.min(5, stars));
-        return ChatColor.GOLD + "★".repeat(clamped) + ChatColor.DARK_GRAY + "☆".repeat(5 - clamped);
+        TextColor tierColor = clamped >= 5 ? COLOR_GOLD : clamped >= 3 ? COLOR_SILVER : COLOR_COPPER;
+        return Component.text("★".repeat(clamped)).color(tierColor)
+                .append(Component.text("☆".repeat(5 - clamped)).color(NamedTextColor.DARK_GRAY));
+    }
+
+    // Legacy-Variante fuer Chat-Ausgaben (AdminCommands); behaelt die exakten
+    // Hex-Farben als §x-Sequenz statt auf Named-Colors runterzurechnen.
+    private static final LegacyComponentSerializer LEGACY_HEX = LegacyComponentSerializer.builder()
+            .character(LegacyComponentSerializer.SECTION_CHAR)
+            .hexColors()
+            .useUnusualXRepeatedCharacterHexFormat()
+            .build();
+
+    public static String formatStars(int stars) {
+        return LEGACY_HEX.serialize(starsComponent(stars));
     }
 
     /* ============================ Lesen/Schreiben ============================ */
@@ -92,6 +138,68 @@ public class SeedItemManager {
         }
 
         return stack.getItemMeta().getPersistentDataContainer().get(CropKey.CROP_TYPE, PersistentDataType.STRING);
+    }
+
+    // Analysierte Samen sind vereinzelte Einzel-Items mit exakter Gen-Lore.
+    // Sie stacken nie: Vanilla nicht (einzigartige analysis_id in der Meta),
+    // und die manuelle Merge-Logik schliesst sie ueber canMerge() aus.
+    public boolean isAnalyzed(ItemStack stack) {
+        if (stack == null || stack.getType().isAir()) {
+            return false;
+        }
+
+        ItemMeta meta = stack.getItemMeta();
+        return meta != null && meta.getPersistentDataContainer().has(CropKey.ANALYZED);
+    }
+
+    // Baut aus einem Samen-Stack (Vorlage fuer Name/Material/crop_type) ein
+    // analysiertes Einzel-Item fuer genau einen Gen-Eintrag.
+    public ItemStack createAnalyzedSeed(ItemStack template, SeedGenes gene) {
+        if (template == null || gene == null) {
+            return null;
+        }
+
+        ItemStack single = template.clone();
+        single.setAmount(1);
+
+        ItemMeta meta = single.getItemMeta();
+        if (meta == null) {
+            return single;
+        }
+
+        meta.lore(List.of(
+                Component.translatable("item.aethos.seed.quality")
+                        .fallback("Güte: %s")
+                        .arguments(starsComponent(gene.getStars()))
+                        .color(NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false),
+                statLine("item.aethos.seed.growth", "Wachstum: %s", gene.getGrowth()),
+                statLine("item.aethos.seed.yield", "Ertrag: %s", gene.getYield()),
+                statLine("item.aethos.seed.resistance", "Resistenz: %s", gene.getResistance()),
+                Component.translatable("item.aethos.seed.analyzed")
+                        .fallback("✦ Analysiert")
+                        .color(COLOR_GOLD)
+                        .decoration(TextDecoration.ITALIC, false),
+                Component.translatable("item.aethos.seed.lore")
+                        .fallback("Aethos-Pflanzensamen")
+                        .color(NamedTextColor.DARK_GRAY)
+                        .decoration(TextDecoration.ITALIC, false)
+        ));
+
+        meta.getPersistentDataContainer().set(CropKey.SEED_GENES, PersistentDataType.STRING, gene.serialize());
+        meta.getPersistentDataContainer().set(CropKey.ANALYZED, PersistentDataType.BYTE, (byte) 1);
+        meta.getPersistentDataContainer().set(CropKey.ANALYSIS_ID, PersistentDataType.STRING, UUID.randomUUID().toString());
+        single.setItemMeta(meta);
+        return single;
+    }
+
+    // Exakte Wert-Zeile der Analyse-Lore, z.B. "Wachstum: 120/255".
+    private Component statLine(String key, String fallback, int value) {
+        return Component.translatable(key)
+                .fallback(fallback)
+                .arguments(Component.text(value + "/" + SeedGenes.MAX_VALUE, NamedTextColor.WHITE))
+                .color(NamedTextColor.GRAY)
+                .decoration(TextDecoration.ITALIC, false);
     }
 
     // Liefert die Gen-Liste des Stacks, repariert auf Stack-Groesse:
@@ -157,6 +265,11 @@ public class SeedItemManager {
 
     public boolean canMerge(ItemStack a, ItemStack b) {
         if (!isSeed(a) || !isSeed(b)) {
+            return false;
+        }
+
+        // Analysierte Samen sind vereinzelt und stacken grundsaetzlich nicht.
+        if (isAnalyzed(a) || isAnalyzed(b)) {
             return false;
         }
 
@@ -259,7 +372,7 @@ public class SeedItemManager {
 
         for (int slot = 0; slot < contents.length; slot++) {
             ItemStack stack = contents[slot];
-            if (!isSeed(stack)) {
+            if (!isSeed(stack) || isAnalyzed(stack)) {
                 continue;
             }
 

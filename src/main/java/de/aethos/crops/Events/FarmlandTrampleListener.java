@@ -30,6 +30,12 @@ public class FarmlandTrampleListener implements Listener {
         DataManager dataManager = AethosCrops.getDataManager();
         if (!dataManager.hasCrop(cropBlock)) return;
 
+        // Trampelschutz: Event abbrechen, Pflanze (und Farmland) bleiben stehen.
+        if (AethosCrops.getConfigManager().isTrampleProtected()) {
+            event.setCancelled(true);
+            return;
+        }
+
         Crop crop = dataManager.loadCrop(cropBlock);
         if (crop == null) {
             dataManager.removeCrop(cropBlock);

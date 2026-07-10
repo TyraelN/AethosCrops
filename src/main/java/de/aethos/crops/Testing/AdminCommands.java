@@ -25,6 +25,10 @@ public class AdminCommands {
     public void execute(CommandSender sender, String[] args) {
         // reload darf auch von der Konsole (Aethos-Panel) kommen.
         if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
+            if (!sender.hasPermission("aethoscrops.admin")) {
+                sender.sendMessage(ChatColor.RED + "Dazu hast du keine Berechtigung.");
+                return;
+            }
             handleReload(sender);
             return;
         }
@@ -40,6 +44,21 @@ public class AdminCommands {
         }
 
         String subCommand = args[0].toLowerCase();
+
+        if (subCommand.equals("analyze")) {
+            if (!player.hasPermission("aethoscrops.analyze")) {
+                player.sendMessage(ChatColor.RED + "Dazu hast du keine Berechtigung.");
+                return;
+            }
+            AethosCrops.getSeedAnalysisListener().open(player);
+            return;
+        }
+
+        if (!player.hasPermission("aethoscrops.admin")) {
+            player.sendMessage(ChatColor.RED + "Dazu hast du keine Berechtigung.");
+            return;
+        }
+
         switch (subCommand) {
             case "chunkinfo" -> handleChunkInfo(player);
             case "blockinfo" -> handleBlockInfo(player);
@@ -108,7 +127,8 @@ public class AdminCommands {
         player.sendMessage(ChatColor.GRAY + "- genes: " + ChatColor.WHITE
                 + "growth=" + genes.getGrowth() + ", yield=" + genes.getYield() + ", resistance=" + genes.getResistance()
                 + ChatColor.GRAY + " → " + SeedItemManager.formatStars(genes.getStars()));
-        player.sendMessage(ChatColor.GRAY + "- model-path: " + ChatColor.WHITE + crop.getModelPathForStage(crop.getStage()));
+        player.sendMessage(ChatColor.GRAY + "- item-model: " + ChatColor.WHITE + crop.getItemModel()
+                + ChatColor.GRAY + " (model-stage " + ChatColor.WHITE + crop.scaleStageTo(7) + ChatColor.GRAY + ")");
         player.sendMessage(ChatColor.GRAY + "- diseases: " + formatDiseaseInfo(crop));
     }
 
@@ -228,18 +248,34 @@ public class AdminCommands {
     }
 
     private void sendUsage(Player player) {
-        player.sendMessage(ChatColor.RED + "Usage: /aethoscrops <chunkinfo|blockinfo|giveseed|givediseasetool|reload>");
+        List<String> allowed = allowedSubCommands(player);
+        if (allowed.isEmpty()) {
+            player.sendMessage(ChatColor.RED + "Dazu hast du keine Berechtigung.");
+            return;
+        }
+        player.sendMessage(ChatColor.RED + "Usage: /aethoscrops <" + String.join("|", allowed) + ">");
+    }
+
+    // Subcommands, die der Sender laut Permission nutzen darf.
+    private List<String> allowedSubCommands(CommandSender sender) {
+        List<String> allowed = new ArrayList<>();
+        if (sender.hasPermission("aethoscrops.analyze")) {
+            allowed.add("analyze");
+        }
+        if (sender.hasPermission("aethoscrops.admin")) {
+            allowed.addAll(List.of("chunkinfo", "blockinfo", "giveseed", "givediseasetool", "reload"));
+        }
+        return allowed;
     }
 
     public List<String> suggest(CommandSender sender, String[] args) {
         if (args.length == 1) {
-            List<String> subCommands = List.of("chunkinfo", "blockinfo", "giveseed", "givediseasetool", "reload");
-            return subCommands.stream()
+            return allowedSubCommands(sender).stream()
                     .filter(entry -> entry.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("giveseed")) {
+        if (args.length == 2 && args[0].equalsIgnoreCase("giveseed") && sender.hasPermission("aethoscrops.admin")) {
             return AethosCrops.getCropRegistry().getAll().stream()
                     .map(Crop::getId)
                     .filter(id -> id.toLowerCase().startsWith(args[1].toLowerCase()))
@@ -247,13 +283,13 @@ public class AdminCommands {
                     .collect(Collectors.toList());
         }
 
-        if (args.length == 3 && args[0].equalsIgnoreCase("giveseed")) {
+        if (args.length == 3 && args[0].equalsIgnoreCase("giveseed") && sender.hasPermission("aethoscrops.admin")) {
             return List.of("1", "8", "16", "32", "64").stream()
                     .filter(amount -> amount.startsWith(args[2]))
                     .collect(Collectors.toList());
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("givediseasetool")) {
+        if (args.length == 2 && args[0].equalsIgnoreCase("givediseasetool") && sender.hasPermission("aethoscrops.admin")) {
             return AethosCrops.getGenRegistry().getAll().stream()
                     .map(IGen::getId)
                     .filter(id -> id.toLowerCase().startsWith(args[1].toLowerCase()))
