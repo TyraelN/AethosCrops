@@ -40,6 +40,14 @@
             <version>1.12.4</version>
             <scope>provided</scope>
         </dependency>
+        <!-- Optionale Anbindung: Analyse-Menue als Custom-Funktion im
+             GUI-Designer (Registrierung nur, wenn das Plugin geladen ist). -->
+        <dependency>
+            <groupId>de.aethos</groupId>
+            <artifactId>AethosGuiDesigner</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -60,6 +60,12 @@ public final class AethosCrops extends JavaPlugin {
         registerListeners();
         registerCommands();
 
+        // Optionale GuiDesigner-Anbindung: nur registrieren, wenn das Plugin
+        // da ist - die Hook-Klasse darf sonst nie geladen werden (Classpath).
+        if (getServer().getPluginManager().getPlugin("AethosGuiDesigner") != null) {
+            de.aethos.crops.Integration.GuiDesignerHook.register(this);
+        }
+
         // Aethos-Integration: Descriptor + Status fuer das Manager-Panel.
         getDataFolder().mkdirs();
         writeAethosDescriptor();
