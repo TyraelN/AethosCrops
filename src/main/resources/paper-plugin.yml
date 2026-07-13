@@ -13,6 +13,11 @@ dependencies:
       load: BEFORE
       required: true
       join-classpath: true
+    # Optional: Custom-Funktionen fuer den Web-GUI-Designer.
+    AethosGuiDesigner:
+      load: BEFORE
+      required: false
+      join-classpath: true
 permissions:
   aethoscrops.admin:
     description: Zugriff auf die AethosCrops-Verwaltungsbefehle.
