@@ -6,7 +6,6 @@ import de.aethos.crops.Utils.SeedGenes;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -47,12 +46,13 @@ public class SeedAnalysisMenu extends MenuHolder<AethosCrops> {
     private static final int BUTTON_SLOT = 22;
 
     public SeedAnalysisMenu(AethosCrops plugin) {
-        // Eigenes Inventory statt String-Titel-Konstruktor, damit der Titel
-        // als TranslatableComponent gesetzt werden kann (GuiLib registriert
-        // Fremd-Inventare ueber registerGui/WeakHashMap).
-        super(plugin, Bukkit.createInventory(null, GUI_SIZE, Component
-                .translatable("gui.aethos.analysis.title")
-                .fallback("Samen-Analyse")));
+        // String-Titel-Konstruktor: GuiLib erstellt das Inventory mit sich
+        // selbst als InventoryHolder - nur so ist die Holder-Erkennung
+        // zuverlaessig. Der Inventory-Konstruktor (WeakHashMap-Registry fuer
+        // Fremd-Inventare, wuerde Component-Titel erlauben) funktioniert mit
+        // GuiLib 1.12.4 auf Paper 26.1 NICHT: kein Callback kommt an,
+        // getestet 2026-07-13.
+        super(plugin, GUI_SIZE, "Samen-Analyse");
 
         for (int slot = INPUT_SLOTS; slot < GUI_SIZE; slot++) {
             setButton(slot, slot == BUTTON_SLOT ? analyzeButton() : new ItemButton<>(frameItem()));
