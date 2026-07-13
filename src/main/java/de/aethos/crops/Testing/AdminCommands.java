@@ -1,6 +1,7 @@
 package de.aethos.crops.Testing;
 
 import de.aethos.crops.AethosCrops;
+import de.aethos.crops.Events.SeedAnalysisMenu;
 import de.aethos.crops.Managers.SeedItemManager;
 import de.aethos.crops.Utils.Crop;
 import de.aethos.crops.Utils.Gen.IGen;
@@ -50,7 +51,8 @@ public class AdminCommands {
                 player.sendMessage(ChatColor.RED + "Dazu hast du keine Berechtigung.");
                 return;
             }
-            AethosCrops.getSeedAnalysisListener().open(player);
+            // GuiLib-Menue: pro Aufruf eine frische Instanz, Zuordnung uebernimmt GuiLib.
+            new SeedAnalysisMenu(AethosCrops.getInstance()).open(player);
             return;
         }
 

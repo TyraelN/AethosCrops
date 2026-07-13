@@ -28,6 +28,18 @@
             <version>26.1.2.build.72-stable</version>
             <scope>provided</scope>
         </dependency>
+        <!-- GUI-Standard der Aethos-Plugins (siehe AETHOS.md). Laeuft als
+             eigenstaendiges Server-Plugin; Abhaengigkeit in paper-plugin.yml.
+             CodeMC hostet nur bis 1.11.9 - das 1.12.4-JAR kommt von
+             github.com/Jannyboy11/GuiLib/releases und ist lokal installiert:
+             mvn install:install-file -Dfile=GuiLib.jar -DgroupId=xyz.janboerman
+               -DartifactId=GuiLib-Plugin -Dversion=1.12.4 -Dpackaging=jar -->
+        <dependency>
+            <groupId>xyz.janboerman</groupId>
+            <artifactId>GuiLib-Plugin</artifactId>
+            <version>1.12.4</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

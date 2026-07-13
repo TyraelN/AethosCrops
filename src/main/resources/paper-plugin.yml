@@ -6,6 +6,13 @@ description: Custom-Crops mit Wachstumsstufen, Krankheiten und Drops (Item-Displ
 authors: [Aethos]
 website: https://github.com/TyraelN/AethosCrops
 # Befehl /aethoscrops (Alias /acrops) wird im Code via Brigadier-Lifecycle registriert.
+# GuiLib: GUI-Standard der Aethos-Plugins (Item-Menues), siehe AETHOS.md.
+dependencies:
+  server:
+    GuiLib:
+      load: BEFORE
+      required: true
+      join-classpath: true
 permissions:
   aethoscrops.admin:
     description: Zugriff auf die AethosCrops-Verwaltungsbefehle.
