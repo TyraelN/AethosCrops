@@ -66,6 +66,10 @@ public final class AethosCrops extends JavaPlugin {
             de.aethos.crops.Integration.GuiDesignerHook.register(this);
         }
 
+        // Optionale AethosAchievements-Anbindung: die Hook-Klasse macht ihren
+        // eigenen Praesenz-Check, daher unbedingt aufrufen.
+        de.aethos.crops.Integration.AchievementsHook.init(this);
+
         // Aethos-Integration: Descriptor + Status fuer das Manager-Panel.
         getDataFolder().mkdirs();
         writeAethosDescriptor();

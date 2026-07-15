@@ -32,6 +32,7 @@ public class CropBreakListener implements Listener {
 
         CropManager cropManager = AethosCrops.getCropManager();
         cropManager.dropBrokenCropLoot(event.getBlock(), crop);
+        de.aethos.crops.Integration.AchievementsHook.increment(event.getPlayer(), "aethoscrops:harvested");
 
         dataManager.removeCrop(event.getBlock());
         AethosCrops.getDisplayManager().removeDisplay(event.getBlock());

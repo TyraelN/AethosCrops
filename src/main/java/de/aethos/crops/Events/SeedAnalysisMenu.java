@@ -199,6 +199,8 @@ public class SeedAnalysisMenu extends MenuHolder<AethosCrops> {
             return;
         }
 
+        de.aethos.crops.Integration.AchievementsHook.increment(player, "aethoscrops:seeds_analyzed");
+
         // Erst freie Eingabe-Slots fuellen, Ueberschuss ins Inventar, Rest droppen.
         int index = 0;
         for (int slot = 0; slot < INPUT_SLOTS && index < results.size(); slot++) {

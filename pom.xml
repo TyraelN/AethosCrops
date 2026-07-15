@@ -48,6 +48,13 @@
             <version>1.0.0-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
+        <!-- Optionale Anbindung an AethosAchievements (Stat-API). Lokal via mvn install. -->
+        <dependency>
+            <groupId>de.aethos</groupId>
+            <artifactId>AethosAchievements</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

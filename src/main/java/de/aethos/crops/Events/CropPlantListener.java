@@ -34,6 +34,7 @@ public class CropPlantListener implements Listener {
         cropManager.setOriginalFirstStage(event.getBlock());
         AethosCrops.getDataManager().saveCrop(event.getBlock(), crop);
         AethosCrops.getDisplayManager().spawnOrUpdateDisplay(event.getBlock(), crop);
+        de.aethos.crops.Integration.AchievementsHook.increment(event.getPlayer(), "aethoscrops:planted");
 
         // Vanilla verbraucht den Samen erst nach dem Event - danach die
         // Gen-Liste des Rest-Stacks auf die neue Stack-Groesse kuerzen

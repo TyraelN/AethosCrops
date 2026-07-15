@@ -18,6 +18,11 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: true
+    # Optional: Statistiken an AethosAchievements melden.
+    AethosAchievements:
+      load: BEFORE
+      required: false
+      join-classpath: true
 permissions:
   aethoscrops.admin:
     description: Zugriff auf die AethosCrops-Verwaltungsbefehle.

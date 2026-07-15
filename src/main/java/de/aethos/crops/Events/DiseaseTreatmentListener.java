@@ -124,6 +124,9 @@ public class DiseaseTreatmentListener implements Listener {
 
             if (session.remainingDiseaseItems <= 0) {
                 healCrop(session);
+                if (clicker instanceof org.bukkit.entity.Player player) {
+                    de.aethos.crops.Integration.AchievementsHook.increment(player, "aethoscrops:diseases_cured");
+                }
                 clicker.closeInventory();
             }
             return;
