@@ -109,7 +109,8 @@ public class ConfigManager {
         DropTable dropTable = parseDropTable(cropId, cropSection.getConfigurationSection("drops"));
         CropTuning tuning = parseTuning(cropSection);
 
-        return new Crop(cropId, displayName, itemModel, growSpeed, dropTable, diseaseChances, maxStage, tuning);
+        return new Crop(cropId, displayName, itemModel, parseSeedItemModel(cropId, cropSection),
+                growSpeed, dropTable, diseaseChances, maxStage, tuning);
     }
 
     // Balancing pro Crop; fehlende Werte fallen auf die globalen Abschnitte
@@ -129,6 +130,21 @@ public class ConfigManager {
                 config.getInt("diseases.max-level", 5)));
 
         return new CropTuning(growthMaxBonus, yieldMaxBonus, resistanceMaxReduction, diseaseDamagePerLevel, diseaseMaxLevel);
+    }
+
+    // Item-Model der Samen-Items; Default folgt der Pack-Konvention
+    // aethos:item/crops/<id>_seeds, per 'seed-item-model' uebersteuerbar. Wird hier
+    // EINMAL validiert und als NamespacedKey gecacht - SeedItemManager haengt sonst
+    // still ein setItemModel(null) an (Samen saehe kommentarlos vanilla aus).
+    private NamespacedKey parseSeedItemModel(String cropId, ConfigurationSection cropSection) {
+        String model = cropSection.getString("seed-item-model",
+                "aethos:item/crops/" + cropId.toLowerCase(java.util.Locale.ROOT) + "_seeds");
+        NamespacedKey key = NamespacedKey.fromString(model);
+        if (key == null) {
+            plugin.getLogger().warning("Crop '" + cropId + "': 'seed-item-model' ist kein gueltiger "
+                    + "namespaced key: " + model + " - Samen behalten das Vanilla-Aussehen.");
+        }
+        return key;
     }
 
     // Item-Model der Pflanzen-Displays; das Wachstums-Stadium waehlt der Client

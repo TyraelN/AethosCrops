@@ -22,6 +22,8 @@ genetics:
 # Pack (Default: "aethos:block/crops/<crop-id>"). Das Wachstums-Stadium waehlt
 # der Client per custom_model_data-Float 0..7 (range_dispatch); die Aethos-Stufe
 # (1..max-stage) wird dafuer linear auf 0..7 skaliert.
+# 'seed-item-model' ist das Item-Model der SAMEN-Items (Default:
+# "aethos:item/crops/<crop-id>_seeds", muss als Definition im Pack existieren).
 # Ernte-Regeln
 harvest:
   # Eine ausgewachsene Pflanze wirft immer mindestens einen vererbten Samen ab,

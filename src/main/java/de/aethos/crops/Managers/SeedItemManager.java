@@ -72,10 +72,11 @@ public class SeedItemManager {
         ));
         meta.getPersistentDataContainer().set(CropKey.CROP_TYPE, PersistentDataType.STRING, crop.getId());
         meta.getPersistentDataContainer().set(CropKey.SEED_GENES, PersistentDataType.STRING, serialize(genes));
-        // Saatgut-Optik per item_model: das Resource Pack stellt fuer JEDE
-        // Crop-ID eine Definition aethos:item/crops/<id>_seeds bereit
-        // (Vanilla-Look faellt im Pack auf Vanilla-Modelle zurueck).
-        meta.setItemModel(NamespacedKey.fromString("aethos:item/crops/" + crop.getId().toLowerCase() + "_seeds"));
+        // Saatgut-Optik per item_model (beim Config-Laden validiert + gecacht; Default
+        // aethos:item/crops/<id>_seeds, per 'seed-item-model' uebersteuerbar). null =
+        // ungueltiger Key, wurde beim Laden gewarnt -> Samen behaelt den Vanilla-Look.
+        NamespacedKey seedModel = crop.getSeedItemModel();
+        if (seedModel != null) meta.setItemModel(seedModel);
         seed.setItemMeta(meta);
         return seed;
     }

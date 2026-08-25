@@ -1,6 +1,7 @@
 package de.aethos.crops.Utils;
 
 import de.aethos.crops.Utils.Gen.IGen;
+import org.bukkit.NamespacedKey;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +16,9 @@ public class Crop {
     // Item-Model des Displays (z.B. "aethos:block/crops/barley"); die Stufe
     // waehlt das Stadium per custom_model_data-Float (siehe DisplayManager).
     private final String itemModel;
+    // Validierter Model-Key der Samen-Items (Config 'seed-item-model', Default
+    // aethos:item/crops/<id>_seeds); null = ungueltig -> Samen behalten Vanilla-Look.
+    private final NamespacedKey seedItemModel;
     private final double growSpeed;
     private final DropTable dropTable;
     private final LinkedHashMap<IGen, Double> diseaseChances;
@@ -27,10 +31,11 @@ public class Crop {
     private final List<IGen> gens = new ArrayList<>();
     private final Map<String, Integer> diseaseLevels = new HashMap<>();
 
-    public Crop(String id, String displayName, String itemModel, double growSpeed, DropTable dropTable, Map<IGen, Double> diseaseChances, int maxStage, CropTuning tuning) {
+    public Crop(String id, String displayName, String itemModel, NamespacedKey seedItemModel, double growSpeed, DropTable dropTable, Map<IGen, Double> diseaseChances, int maxStage, CropTuning tuning) {
         this.id = id;
         this.displayName = displayName;
         this.itemModel = itemModel;
+        this.seedItemModel = seedItemModel;
         this.growSpeed = growSpeed;
         this.dropTable = dropTable;
         this.diseaseChances = new LinkedHashMap<>(diseaseChances);
@@ -52,6 +57,10 @@ public class Crop {
 
     public String getItemModel() {
         return itemModel;
+    }
+
+    public NamespacedKey getSeedItemModel() {
+        return seedItemModel;
     }
 
     public double getGrowSpeed() {

@@ -227,6 +227,7 @@ public class DataManager {
                 crop.getId(),
                 crop.getDisplayName(),
                 crop.getItemModel(),
+                crop.getSeedItemModel(),
                 crop.getGrowSpeed(),
                 crop.getDropTable(),
                 crop.getDiseaseChances(),

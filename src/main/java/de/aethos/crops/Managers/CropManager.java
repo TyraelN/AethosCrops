@@ -197,6 +197,7 @@ public class CropManager {
                 template.getId(),
                 template.getDisplayName(),
                 template.getItemModel(),
+                template.getSeedItemModel(),
                 template.getGrowSpeed(),
                 template.getDropTable(),
                 template.getDiseaseChances(),
