@@ -10,6 +10,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -71,6 +72,10 @@ public class SeedItemManager {
         ));
         meta.getPersistentDataContainer().set(CropKey.CROP_TYPE, PersistentDataType.STRING, crop.getId());
         meta.getPersistentDataContainer().set(CropKey.SEED_GENES, PersistentDataType.STRING, serialize(genes));
+        // Saatgut-Optik per item_model: das Resource Pack stellt fuer JEDE
+        // Crop-ID eine Definition aethos:item/crops/<id>_seeds bereit
+        // (Vanilla-Look faellt im Pack auf Vanilla-Modelle zurueck).
+        meta.setItemModel(NamespacedKey.fromString("aethos:item/crops/" + crop.getId().toLowerCase() + "_seeds"));
         seed.setItemMeta(meta);
         return seed;
     }
