@@ -23,6 +23,11 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: true
+    # Optional: F3-Debug-Provider bei AethosDebug registrieren.
+    AethosDebug:
+      load: BEFORE
+      required: false
+      join-classpath: true
 permissions:
   aethoscrops.admin:
     description: Zugriff auf die AethosCrops-Verwaltungsbefehle.

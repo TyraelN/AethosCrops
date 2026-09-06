@@ -70,6 +70,9 @@ public final class AethosCrops extends JavaPlugin {
         // eigenen Praesenz-Check, daher unbedingt aufrufen.
         de.aethos.crops.Integration.AchievementsHook.init(this);
 
+        // Optionale AethosDebug-Anbindung: F3-Debug-Provider (eigener Check).
+        de.aethos.crops.Integration.DebugHook.init(this);
+
         // Aethos-Integration: Descriptor + Status fuer das Manager-Panel.
         getDataFolder().mkdirs();
         writeAethosDescriptor();
@@ -79,7 +82,8 @@ public final class AethosCrops extends JavaPlugin {
 
     @Override
     public void onDisable() {
-
+        // F3-Debug-Provider wieder abmelden (No-op ohne AethosDebug).
+        de.aethos.crops.Integration.DebugHook.shutdown();
     }
 
     public static CropManager getCropManager() {

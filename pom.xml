@@ -19,6 +19,12 @@
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
+        <!-- Aethos-Reposilite: liefert u.a. AethosDebug (Build hier aus lokalem
+             .m2, Eintrag haelt die Aufloesung reproduzierbar). -->
+        <repository>
+            <id>aethos-snapshots</id>
+            <url>https://reposilite.aethosserver.de/snapshots</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -52,6 +58,13 @@
         <dependency>
             <groupId>de.aethos</groupId>
             <artifactId>AethosAchievements</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- Optionale Anbindung an AethosDebug (F3-Debug-Provider). -->
+        <dependency>
+            <groupId>de.tyrael</groupId>
+            <artifactId>AethosDebug</artifactId>
             <version>1.0.0-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
